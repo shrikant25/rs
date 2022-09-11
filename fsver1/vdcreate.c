@@ -5,6 +5,26 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <limits.h>
+
+int set_blkflgs(int, int);
+
+
+int set_blkflgs(int fd, int flgscnt){
+   printf("setting flags and flgscnt %d\n", flgscnt);
+   int i = 0;
+   unsigned long int flgval = 0xFFFFFFFFFFFFFFFF; 
+
+   printf("flagval is :  %lx", flgval);
+   for(; i < flgscnt/(sizeof(flgval) * 8); i++){
+     printf("writing flag value %lu\n", flgval);
+     if( write(fd, &flgval, sizeof(long int)) != sizeof(long int))
+      return -1;
+   }
+   printf("wrote %d blocks\n", i);
+   return 0;
+}
+
 
 int main(int argc, char *argv[]){
    
@@ -19,6 +39,7 @@ int main(int argc, char *argv[]){
    unsigned char *chptr;
    int fd = 0;
    int i = 0;
+   short int flgsts = 0;
    unsigned long int dsksz = 0;
    unsigned int dsksz_exp = 0;
    unsigned int blksz = 0;
@@ -61,10 +82,14 @@ int main(int argc, char *argv[]){
     
    chptr = (char *)&blksz_exp;
    write(fd, chptr, 1); 
+  
+   flgsts = set_blkflgs(fd, blkcnt - flgblkcnt); 
+	   //first block will be used to store other metadata
 
-   chptr = (char *)&flgblkcnt;
-   write(fd, chptr, 1);
-   write(fd, ++chptr, 1);
+   if(flgsts){
+   	write(1, "flag setting failed\n", 20);
+	exit(EXIT_FAILURE);
+   }
 
    write(1, "Disk creation successfull\n", 26);
  

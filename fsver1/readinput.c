@@ -58,11 +58,16 @@ int main(){
 	for(int j =0; j<10; j++){
 		printf("%d = %lx\n", j, flags[j]);
 	}
-	setbits(127, (200 * 1024), 0);
+
 	printf("\n\n");
+	setbits(127, (200 * 1024), 0);
+
 	for(int j =0; j<10; j++){
 		printf("%d = %lx\n", j, flags[j]);
 	}
+
+
+	printf("\n\n");
 	setbits(127, (200 * 1024), 1);
 	
 	for(int j =0; j<10; j++){
