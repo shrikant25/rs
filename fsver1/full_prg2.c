@@ -1,4 +1,4 @@
-#include<stdio.h>
+	#include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
 #include<unistd.h>
@@ -57,19 +57,19 @@ int write_metdata(char *usrflnm, int usrflsz, int flbegloc){
 	
 	unsigned char flnmsz = strlen(usrflnm);
 	char * chptr;	
-	int mtdata_sz = sizeof(char) + strlen + (sizeof(int)*2);
+	int	 mtdata_sz = flnmsz + sizeof(int)*2 + sizeof(char);
 	char *buf = malloc(mtdata_sz+1);
 	int i = 0;
 	int j = 0;
-	int mtdata_loc =  dskz - ttlmetadata_sz;           // write metadata from this location 
+	int mtdata_loc =  dsksz - ttlmetadata_sz;           // write metadata from this location 
 	
 	
-	chptr = &usrflsz;                                 // add userfilename size to buffer (byte by byte)
+	chptr = (char *)&usrflsz;                                 // add userfilename size to buffer (byte by byte)
 	for(i=0; i<4; i++){
 		buf[j++] = chptr[i];						  
 	}
 	
-	chptr = &flgbegloc;								 // add beginning location of file's data in disk (byte by byte)
+	chptr = (char *)&flbegloc;								 // add beginning location of file's data in disk (byte by byte)
 	for(i=0; i<4; i++){
 		buf[j++] = chptr[i];
 	}
@@ -86,13 +86,13 @@ int write_metdata(char *usrflnm, int usrflsz, int flbegloc){
 	
 	if(fd){
 	
-		lseek(fd, metadata_loc-(mtdata_sz-1), SEEK_SET);
+		lseek(fd, mtdata_loc-(mtdata_sz-1), SEEK_SET);
 		write(fd, buf, mtdata_sz);            // write metadata to file
-		close(fd);
-		
-		
+				
 		ttlmetadata_sz += mtdata_sz;
-		
+		lseek(fd, 0, SEEK_END);
+		write(fd, &ttlmetadata_sz, sizeof(ttlmetadata_sz));
+		close(fd);
 		
 	}
 	else
@@ -101,7 +101,7 @@ int write_metdata(char *usrflnm, int usrflsz, int flbegloc){
 	return 0;
 }
 
-
+/*
 void display_flags(){
 	
 	int i;
@@ -109,7 +109,7 @@ void display_flags(){
 		printf("%d : %lx\n", i, flags[i]);
 
 }
-
+*/
 
 int setbits(int beg_loc, unsigned long int bytes, int bitsign){ 
 	
@@ -171,7 +171,7 @@ int write_to_file(char *usrflnm, int beg_loc, int byte_cnt){
 	close(disk_fd);
 	close(urfl_fd);	
 	
-	write_metdata(usrflnm, byte_cnt, begloc);
+	write_metdata(usrflnm, byte_cnt, beg_loc);
 	
 	
 	return 0;
@@ -265,7 +265,7 @@ void build(){
 int write_flags_todisk(int flg_datasz){
 	
 	int data_written = 0;
-	int fd = open("diskname, O_WRONLY");
+	int fd = open(diskname, O_WRONLY);
 	
 	lseek(fd, 2, SEEK_SET);
 	data_written = write(fd, flags, flg_datasz);
@@ -314,49 +314,44 @@ int main(int argc, char *argv[]){
 		
 		close(fd);
 
-		while(1){
-		
-			if(rdcnt == readsize)
-				build();
-			else{
-				perror("Failed to read flags\n");
-				exit(EXIT_FAILURE);
-			}
-			
-			
-			printf("total blcks %d\n", FFLST.frblkcnt);
-			
-			printf("largest available block is at %d\n", FFLST.head->loc+flgblkcnt+1);
-			printf("largest available block is at %ld\n", ((FFLST.head->loc+flgblkcnt)*blksz)+1);
-			printf("total empty  blocks %d\n", FFLST.head->cnt);
-			printf("total empty  bytes %ld\n", (FFLST.head->cnt)*blksz);
-			
-			fd = open("b.txt", O_RDONLY);
-			if(fd){
-				usrflsz = lseek(fd, 0, SEEK_END);
-				close(fd);
-				if(write_to_file("b.txt", ((FFLST.head->loc+flgblkcnt)*blksz)+1, usrflsz) == -1){
-					perror("Failed to write file to disk");
-					exit(EXIT_FAILURE);
-				}
-				else{   // update flag values inside the disk
-					if(write_flags_todisk(readisize) == -1){
-						perror("Failed to write flags\n");
-						exit(EXIT_FAILURE);
-					}
-				}
-			
-			}
-			
-			display_flags();
-			
-			
+
+	
+		if(rdcnt == readsize)
+			build();
+		else{
+			perror("Failed to read flags\n");
+			exit(EXIT_FAILURE);
 		}
 		
 		
-
+		printf("total blcks %d\n", FFLST.frblkcnt);
 		
-
+		printf("largest available block is at %d\n", FFLST.head->loc+flgblkcnt+1);
+		printf("largest available block is at %ld\n", ((FFLST.head->loc+flgblkcnt)*blksz)+1);
+		printf("total empty  blocks %d\n", FFLST.head->cnt);
+		printf("total empty  bytes %ld\n", (FFLST.head->cnt)*blksz);
+		
+		fd = open("b.txt", O_RDONLY);
+		if(fd){
+			usrflsz = lseek(fd, 0, SEEK_END);
+			close(fd);
+			if(write_to_file("b.txt", ((FFLST.head->loc+flgblkcnt)*blksz)+1, usrflsz) == -1){
+				perror("Failed to write file to disk");
+				exit(EXIT_FAILURE);
+			}
+			else{   // update flag values inside the disk
+				if(write_flags_todisk(readsize) == -1){
+					perror("Failed to write flags\n");
+					exit(EXIT_FAILURE);
+				}
+			}
+		
+		}
+		
+	//	display_flags();
+		
+		write_flags_todisk(readsize); // readsize = flag data size		
+	
 	}
 	else{
 		perror("Failed to open file\n");
