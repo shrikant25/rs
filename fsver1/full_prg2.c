@@ -19,15 +19,14 @@ typedef struct FR_FLGBLK{
 
 typedef struct{
 	FR_FLGBLK *head;
-	int frblkcnt;
+	unsigned int frblkcnt;
 }FR_FLGBLK_LST;
 
 
 typedef struct FL_METADATA{
-	unsigned char flnmsz;
-	char *flnm;
-	unsigned long int strtloc;
-	unsigned long int flsz;
+	char flnm[64];
+	unsigned int strtloc;
+	unsigned int flsz;
 }FL_METADATA;
 
 
@@ -39,59 +38,44 @@ unsigned int blkcnt;
 unsigned int flgblkcnt;
 unsigned int chunks;
 const char * diskname;
-int ttlmetadata_sz;
+unsigned int ttlmetadata_blks;
 
 
 void display();
 void display_flags();
 void insert();
-FR_FLGBLK * createblk(int);
+FR_FLGBLK * createblk(unsigned int);
 void insertblk(FR_FLGBLK *);
 void build();
-int write_to_file(char *, int, int);
-int setbits(int, unsigned long int, int);
-int write_flags_todisk(int);
+int write_to_file(char *, unsigned int, unsigned long int);
+int setbits(unsigned int, unsigned long int, unsigned int);
+int write_flags_todisk(unsigned int);
 
 
-int write_metdata(char *usrflnm, int usrflsz, int flbegloc){
+unsigned int write_metdata(char *usrflnm, unsigned int usrflsz, unsigned int flbegloc){
 	
-	unsigned char flnmsz = strlen(usrflnm);
-	char * chptr;	
-	int	 mtdata_sz = flnmsz + sizeof(int)*2 + sizeof(char);
-	char *buf = malloc(mtdata_sz+1);
-	int i = 0;
-	int j = 0;
-	int mtdata_loc =  dsksz - ttlmetadata_sz;           // write metadata from this location 
+	FL_METADATA flmtd;
+	unsigned int mtdata_loc =  dsksz - (ttlmetadata_blks*sizeof(FL_METADATA)+4);         			  // write metadata from this location 
+	mtdata_loc -= sizeof(FL_METADATA);
+		
 	
+	strcpy(flmtd.flnm, usrflnm);
+	flmtd.strtloc = flbegloc;
+	flmtd.flsz = usrflsz;
 	
-	chptr = (char *)&usrflsz;                                 // add userfilename size to buffer (byte by byte)
-	for(i=0; i<4; i++){
-		buf[j++] = chptr[i];						  
-	}
-	
-	chptr = (char *)&flbegloc;								 // add beginning location of file's data in disk (byte by byte)
-	for(i=0; i<4; i++){
-		buf[j++] = chptr[i];
-	}
-
-	for(i=0; i<flnmsz; i++){						 // add filename to buffer
-		buf[j++] = usrflnm[i];
-	}
-	
-	chptr = &flnmsz;								 //	add filename's length to buffer
-	buf[j++] =  *chptr;
-	buf[j] = '\0';
-	
-	int fd = open(diskname, O_WRONLY);
+	unsigned int fd = open(diskname, O_WRONLY);
 	
 	if(fd){
 	
-		lseek(fd, mtdata_loc-(mtdata_sz-1), SEEK_SET);
-		write(fd, buf, mtdata_sz);            // write metadata to file
-				
-		ttlmetadata_sz += mtdata_sz;
-		lseek(fd, 0, SEEK_END);
-		write(fd, &ttlmetadata_sz, sizeof(ttlmetadata_sz));
+		lseek(fd, mtdata_loc-1, SEEK_SET);
+		printf("writing metadata at %u\n", mtdata_loc-1);
+		write(fd, &flmtd, sizeof(flmtd));     				        // write metadata to file
+		printf("filstatr loc %u\n", flmtd.strtloc);
+		printf("filsz %u\n", flmtd.flsz);
+		ttlmetadata_blks += 1;
+		lseek(fd, -5, SEEK_END);
+		write(fd, &ttlmetadata_blks, sizeof(ttlmetadata_blks));
+		printf("total metadata blocks in the end %d\n", ttlmetadata_blks);
 		close(fd);
 		
 	}
@@ -104,21 +88,21 @@ int write_metdata(char *usrflnm, int usrflsz, int flbegloc){
 /*
 void display_flags(){
 	
-	int i;
-	for(i = 0; i<chunks; i++)
+	unsigned int i;
+	for(i = 0; i<chunks; i++) // chunks = ((disksize/blocksize)-512)/64 ,,,,,, ((2^32/ 2^10)-512)/64 = 65528 
 		printf("%d : %lx\n", i, flags[i]);
 
 }
 */
 
-int setbits(int beg_loc, unsigned long int bytes, int bitsign){ 
+int setbits(unsigned int beg_loc, unsigned long int bytes, unsigned int bitsign){ 
 	
 	
-	int bitcnt = ceil((float)bytes/(float)blksz);
-	int flag = 0;
-	int startbit_inflag = 0;
-	int loc = beg_loc;
-	int num_bits_manp = 0;
+	unsigned int bitcnt = ceil((float)bytes/(float)blksz);
+	unsigned int flag = 0;
+	unsigned int startbit_inflag = 0;
+	unsigned int loc = beg_loc;
+	unsigned int num_bits_manp = 0;
 	
 	while(bitcnt){
 	
@@ -145,20 +129,20 @@ int setbits(int beg_loc, unsigned long int bytes, int bitsign){
 }
 
 
-int write_to_file(char *usrflnm, int beg_loc, int byte_cnt){
+int write_to_file(char *usrflnm, unsigned int beg_loc,unsigned long int byte_cnt){
 	
 	
 	setbits(beg_loc-(flgblkcnt*blksz), byte_cnt, 0);
 	char data_buf[BUFLEN];
-	int urfl_fd = open(usrflnm, O_RDONLY);
-	int disk_fd = open(diskname, O_WRONLY);
-	int bytes_to_write = 0;
-	int flbyte_cnt = byte_cnt;
+	unsigned int urfl_fd = open(usrflnm, O_RDONLY);
+	unsigned int disk_fd = open(diskname, O_WRONLY);
+	unsigned int bytes_to_write = 0;
+	unsigned long int flbyte_cnt = byte_cnt;
 
 	if(!(urfl_fd && disk_fd)) return -1;
 
 	lseek(disk_fd, beg_loc-1, SEEK_SET);
-	printf("begloc %d and bytecnt %d\n", beg_loc, flbyte_cnt);
+	printf("begloc %d and bytecnt %ld\n", beg_loc, flbyte_cnt);
 	while(flbyte_cnt>0){
 
 		bytes_to_write = flbyte_cnt > BUFLEN ? BUFLEN : flbyte_cnt;			
@@ -213,7 +197,7 @@ void insertblk(FR_FLGBLK *newfr_blk){
 }
 
 
-FR_FLGBLK * createblk(int bitloc){
+FR_FLGBLK * createblk(unsigned int bitloc){
 
 	FR_FLGBLK * blk = (FR_FLGBLK *)malloc(sizeof(FR_FLGBLK));
 	blk->loc = (unsigned int)bitloc;
@@ -262,10 +246,10 @@ void build(){
 }
 
 
-int write_flags_todisk(int flg_datasz){
+int write_flags_todisk(unsigned int flg_datasz){
 	
-	int data_written = 0;
-	int fd = open(diskname, O_WRONLY);
+	unsigned int data_written = 0;
+	unsigned int fd = open(diskname, O_WRONLY);
 	
 	lseek(fd, 2, SEEK_SET);
 	data_written = write(fd, flags, flg_datasz);
@@ -278,7 +262,7 @@ int write_flags_todisk(int flg_datasz){
 
 
 
-int main(int argc, char *argv[]){
+int main(unsigned int argc, char *argv[]){
 	
 	if(argc != 2){
 		write(1, "Invalid arguments\n", 18);
@@ -286,18 +270,18 @@ int main(int argc, char *argv[]){
 	}
 	
 	diskname = argv[1];
-	unsigned char ch;
-	int fd = open(diskname, O_RDONLY);
-	int rdcnt;
-	int readsize;
-	long int usrflsz;
+	char ch;
+	unsigned int fd = open(diskname, O_RDONLY);
+	unsigned int rdcnt;
+	unsigned int readsize;
+	unsigned long int usrflsz;
 
 	if(fd){
 		read(fd, &ch, sizeof(char));
-		dsksz = (long int)pow(2, ch);
+		dsksz = (unsigned long int)pow(2, ch);
 
 		read(fd, &ch, sizeof(char));
-		blksz = (long int)pow(2, ch);
+		blksz = (unsigned long int)pow(2, ch);
 	
 		blkcnt = dsksz/blksz;
 		flgblkcnt = (blkcnt/8) / blksz; 
@@ -309,9 +293,9 @@ int main(int argc, char *argv[]){
 		flags = malloc(readsize);
 		rdcnt = read(fd, flags, readsize);
 		
-		lseek(fd, 3, SEEK_END);
-		read(fd, &ttlmetadata_sz, sizeof(ttlmetadata_sz));
-		
+		lseek(fd, -5, SEEK_END);
+		read(fd, &ttlmetadata_blks, sizeof(ttlmetadata_blks));
+		printf("total metadata blocks in the begining %u\n", ttlmetadata_blks);
 		close(fd);
 
 

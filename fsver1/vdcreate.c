@@ -15,9 +15,9 @@ int set_blkflgs(int fd, int flgscnt){
    int i = 0;
    unsigned long int flgval = 0xFFFFFFFFFFFFFFFF; 
 
-   printf("flagval is :  %lx", flgval);
+   //printf("flagval is :  %lx", flgval);
    for(; i < flgscnt/(sizeof(flgval) * 8); i++){
-     printf("writing flag value %lu\n", flgval);
+    // printf("writing flag value %lu\n", flgval);
      if( write(fd, &flgval, sizeof(long int)) != sizeof(long int))
       return -1;
    }
@@ -35,10 +35,9 @@ int main(int argc, char *argv[]){
    }
    
 
-   char ch;
    unsigned char *chptr;
    int fd = 0;
-   int i = 0;
+   unsigned int val = 0;
    short int flgsts = 0;
    unsigned long int dsksz = 0;
    unsigned int dsksz_exp = 0;
@@ -71,9 +70,9 @@ int main(int argc, char *argv[]){
    }
    
   
-   lseek(fd, dsksz-1, SEEK_SET);
-   ch = '~';
-   write(fd, &ch, sizeof(ch));
+   lseek(fd, dsksz-4, SEEK_SET);
+   val = 0;
+   write(fd, &val, sizeof(val));
 
    lseek(fd, 0, SEEK_SET);
  

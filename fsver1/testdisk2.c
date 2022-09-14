@@ -5,17 +5,59 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+
+typedef struct FL_METADATA{
+	char flnm[64];
+	unsigned int strtloc;
+	unsigned int flsz;
+}FL_METADATA;
+
+
 int main(int argc, char *argv[]){
   
    int fd = open(argv[1], O_RDONLY);
    char buf[1024];
-   lseek(fd, atoi(argv[2])-1, SEEK_SET);
+   unsigned long flags[65536];
+   char dsksz, blksz;
+   
+   read(fd, &dsksz, sizeof(dsksz));
+   read(fd, &blksz, sizeof(blksz));
+   read(fd, flags, sizeof(flags));
+   
+   printf("filesize  %d\n", dsksz);
+   printf("blocksize  %d\n", blksz);	
+   
+   for(int i =0; i<65528; i++){
+   	 printf("flag[%d] %lx\n", i, flags[i]);
+   }
+   
+   
+  /* lseek(fd, atoi(argv[2])-1, SEEK_SET);
    read(fd, buf, atoi(argv[3]));
  	for(int i =0; i < atoi(argv[3]); i++)
    printf("%c", buf[i]);
 printf("\n");
-     	close(fd);
+*/
+
+  lseek(fd, -5, SEEK_END);
+  unsigned int ttlmetadatablks;
+  read(fd, &ttlmetadatablks, sizeof(ttlmetadatablks));
+  FL_METADATA flmtd;
+	
+	printf("ttlmetadatablks %u\n", ttlmetadatablks);
+	
+  for(int i=1; i<=ttlmetadatablks; i++){
+ 		lseek(fd, -(i*sizeof(flmtd)+5), SEEK_END);
+ 		read(fd, &flmtd, sizeof(flmtd));
+ 		printf("i = %d\n", i);
+ 		printf("filename %s\n", flmtd.flnm); 
+ 		printf("start loc %u\n", flmtd.strtloc);
+ 		printf("filesz %u\n", flmtd.flsz);
+ 		printf("\n\n");
+  }	
 
 
-   return 0;
+  close(fd);
+
+  return 0;
 }
