@@ -315,11 +315,11 @@ int main(unsigned int argc, char *argv[]){
 		printf("total empty  blocks %d\n", FFLST.head->cnt);
 		printf("total empty  bytes %ld\n", (FFLST.head->cnt)*blksz);
 		
-		fd = open("b.txt", O_RDONLY);
+		fd = open("c.txt", O_RDONLY);
 		if(fd){
 			usrflsz = lseek(fd, 0, SEEK_END);
 			close(fd);
-			if(write_to_file("b.txt", ((FFLST.head->loc+flgblkcnt)*blksz)+1, usrflsz) == -1){
+			if(write_to_file("c.txt", ((FFLST.head->loc+flgblkcnt)*blksz)+1, usrflsz) == -1){
 				perror("Failed to write file to disk");
 				exit(EXIT_FAILURE);
 			}

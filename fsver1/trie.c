@@ -2,8 +2,14 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
+#define BUFLEN 20560
 #define maxc 256
+#define FSIZE 10000
 
 typedef struct trienode{
 	struct trienode *arr[maxc];
@@ -156,8 +162,58 @@ bool deletestr(trienode **root, char *pprefix){
 
 
 int main(void){
+
 	trienode *root = NULL;
 
+	int fd = open("filenames.txt", O_RDONLY, 777);
+	if(fd){
+	long int filelen1 = lseek(fd, 0, SEEK_END);
+	long int filelen = filelen1;
+
+	//printf("%ld\n", filelen);
+	lseek(fd, 0, SEEK_SET);
+	int dataread = 0;
+	char buffer[BUFLEN];
+	int i, j;
+	char *filename = malloc(sizeof(char) *FSIZE);
+	int unfnfllen = 0;
+	
+
+	
+	while(filelen>0){
+	 	dataread = read(fd, buffer, BUFLEN);
+		if(dataread <= 0)
+			break;
+		j = 0;
+		for(i=0; i<dataread; i++){
+			if(buffer[i] == '\n'){
+				filename[j] = '\0';
+				insert(&root, filename);
+				filename[0] = '\0';
+				j = 0;
+			}
+			else{
+				filename[j++] = buffer[i];
+			}			
+		}
+		
+		if(filename[0] != '\0'){
+			//printf("%c\n", filename[j]);
+			filename[j] = '\0';
+			unfnfllen = strlen(filename);
+			//printf("%s\n", filename);
+			//printf("%d\n", j);
+			dataread = i-j-2;
+			lseek(fd,  unfnfllen-1, SEEK_CUR);
+		}
+		//printf("filelen befor %ld\n", filelen);
+		filelen = filelen - dataread;
+		//printf("dataraed %d\n", dataread);
+		//printf("after filelen %ld\n", filelen);
+		dataread = 0;
+	}
+	
+/*
 	insert(&root, "you");
 	insert(&root, "suck");
 	insert(&root, "can");
@@ -165,12 +221,45 @@ int main(void){
 	insert(&root, "dig");
 	insert(&root, "it");
 	insert(&root, "sucker");
-	disptrienode(root);
-	printf("search for su : %d\n", searchtrie(root, "su"));
+//	disptrienode(root);
 	printf("search for sucker : %d\n", searchtrie(root, "sucker"));
 	printf("search for dig : %d\n", searchtrie(root, "dig"));
-	deletestr(&root, "dig");
-	printf("search for dig : %d\n", searchtrie(root, "dig"));
-	
+	deletestr(&root, "dig");*/
+	filelen = filelen1;
+	lseek(fd, 0, SEEK_SET);
+	while(filelen>0){
+	 	dataread = read(fd, buffer, BUFLEN);
+		if(dataread <= 0)
+			break;
+		j = 0;
+		for(i=0; i<dataread; i++){
+			if(buffer[i] == '\n'){
+				filename[j] = '\0';
+			//	printf("search for %s : %d\n", filename, searchtrie(root, filename));
+				filename[0] = '\0';
+				j = 0;
+			}
+			else{
+				filename[j++] = buffer[i];
+			}			
+		}
+		
+		if(filename[0] != '\0'){
+		//	printf("%c\n", filename[j]);
+			filename[j] = '\0';
+			unfnfllen = strlen(filename);
+	//		printf("%s\n", filename);
+//			printf("%d\n", j);
+			dataread = i-j-2;
+			lseek(fd,  unfnfllen-1, SEEK_CUR);
+		}
+		//printf("filelen befor %ld\n", filelen);
+		filelen = filelen - dataread;
+		//printf("dataraed %d\n", dataread);
+		//printf("after filelen %ld\n", filelen);
+		dataread = 0;
+	}
+	close(fd);
+	}
 	return 0;
 }
