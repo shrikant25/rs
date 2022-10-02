@@ -29,7 +29,7 @@ int set_blkflgs(int fd, int flgscnt, char * buffer, unsigned int blksz){
 		bytes_to_write = flgscnt/8;
 
 	memset(buffer, 0xFF, bytes_to_write);
-   	
+  // 	printf("in c buffer is %d\n", buffer[0]);
 //	printf("%d written\n", bytes_to_write);
 	status = vdwrite(fd, buffer, i, blksz);
 	if(status <= 0)
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]){
    blksz_exp = atoi(argv[3]);
    dsksz = pow(2, dsksz_exp);
    blksz = pow(2, blksz_exp);
-   char *buffer = calloc((blksz), sizeof(char));
+   unsigned char *buffer = calloc((blksz), sizeof(char));
 
    blkcnt = dsksz/blksz;
    flgblkcnt = (blkcnt/blksz)/8;
@@ -95,6 +95,18 @@ int main(int argc, char *argv[]){
   
    flgsts = set_blkflgs(fd, blkcnt, buffer, blksz); 
 	   //first block will be used to store other metadata
+
+	memset(buffer, '\0', blksz);
+
+	val = 0;	
+	chptr = (char *)&val;
+	buffer[blksz-4] = *chptr++;
+	buffer[blksz-3] = *chptr++;
+	buffer[blksz-2] = *chptr++;
+	buffer[blksz-1] = *chptr;
+	//printf("in end buffer is %d\n", buffer[blksz-5]);
+	//printf("\nnow\n");
+	vdwrite(fd, buffer, blkcnt-1, blksz);
 
    if(flgsts){
    	write(1, "flag setting failed\n", 20);
