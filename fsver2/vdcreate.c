@@ -1,13 +1,10 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <limits.h>
 #include <string.h>
-#include "vdfuncs.h"
+#include "vdheader.h"
+#include "vdsyslib.h"
 
 int set_blkflgs(int, int, char *, unsigned int blksz);
 
@@ -83,7 +80,6 @@ int main(int argc, char *argv[]){
       write(1, "Disk creation failed\n", 21);
       exit(EXIT_FAILURE);
    }
-
    
    chptr = (char *)&dsksz_exp; 
    buffer[0] = *chptr;
@@ -91,23 +87,17 @@ int main(int argc, char *argv[]){
    chptr = (char *)&blksz_exp;
    buffer[1] =  *chptr;
 
+   val = 0;	
+	chptr = (char *)&val;
+	buffer[2] = *chptr++;
+	buffer[3] = *chptr++;
+	buffer[4] = *chptr++;
+	buffer[5] = *chptr;
+
    vdwrite(fd, buffer, 0, blksz);
   
    flgsts = set_blkflgs(fd, blkcnt, buffer, blksz); 
 	   //first block will be used to store other metadata
-
-	memset(buffer, '\0', blksz);
-
-	val = 0;	
-	chptr = (char *)&val;
-	buffer[blksz-4] = *chptr++;
-	buffer[blksz-3] = *chptr++;
-	buffer[blksz-2] = *chptr++;
-	buffer[blksz-1] = *chptr;
-	//printf("in end buffer is %d\n", buffer[blksz-5]);
-	//printf("\nnow\n");
-	vdwrite(fd, buffer, blkcnt-1, blksz);
-
    if(flgsts){
    	write(1, "flag setting failed\n", 20);
 	exit(EXIT_FAILURE);

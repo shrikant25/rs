@@ -1,7 +1,4 @@
-#include<sys/types.h>
-#include<sys/stat.h>
-#include<fcntl.h>
-#include<unistd.h> 
+#include "vdsyslib.h"
    
 int vdread(int fd, char *buffer, int block_number, int block_size){
 		
