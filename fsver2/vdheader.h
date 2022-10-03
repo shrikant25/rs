@@ -31,6 +31,7 @@ typedef struct FR_FLGBLK_LST{
 #define _FL_METADATA
 typedef struct FL_METADATA{
 	char flnm[ULBCNT];
+	unsigned char isavailable;
 	unsigned int strtloc;
 	unsigned int flsz;
 }FL_METADATA;

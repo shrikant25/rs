@@ -142,8 +142,12 @@ int main(int argc, char *argv[]){
 		fd = open("c.txt", O_RDONLY);
 		if(fd){
 			usrflsz = lseek(fd, 0, SEEK_END);
+
+			//unsigned int blocks_required = ceil(usrflsz/DSKINF.blksz);
+			//unsigned int blockptr_blocks_required = ceil((blocks_required * sizeof(int))/DSKINF.blksz);
+
 			close(fd);
-			if(write_to_file("c.txt", ((FFLST.head->loc+DSKINF.flgblkcnt)*DSKINF.blksz)+1, usrflsz) == -1){
+			if(write_to_file("c.txt", ((FFLST.head->loc+DSKINF.flgblkcnt +1)*DSKINF.blksz)+1, usrflsz) == -1){
 				perror("Failed to write file to disk");
 				exit(EXIT_FAILURE);
 			}

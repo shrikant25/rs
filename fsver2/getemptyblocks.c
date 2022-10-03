@@ -5,14 +5,33 @@
 
 void insertblk(FR_FLGBLK *newfr_blk){
 
+	FR_FLGBLK **temp = &(FFLST.head);
+
+	while(*temp != NULL){
+		
+		if((*temp)->cnt > newfr_blk->cnt)
+			temp = &(*temp)->next;
+	
+		else break;
+	}
+
+}
+	/* newfr_blk->next = *temp;
+	*temp = newfr_blk;
+
 	if(FFLST.head == NULL){
 		FFLST.frblkcnt = 1;
 		FFLST.head = newfr_blk;
 	}
 	else{
 	
+		temp = FFLST.head;
+
 		FFLST.frblkcnt++;
 		
+		if(newfr_blk->cnt > temp->cnt)
+
+
 		if(FFLST.head->cnt < newfr_blk->cnt){
 			newfr_blk->next = FFLST.head;
 			FFLST.head = newfr_blk;	
@@ -21,8 +40,9 @@ void insertblk(FR_FLGBLK *newfr_blk){
 			newfr_blk->next = FFLST.head->next;
 			FFLST.head->next = newfr_blk;
 		}
-	}
-}
+	} */
+
+
 
 
 FR_FLGBLK * createblk(unsigned int bitloc){
