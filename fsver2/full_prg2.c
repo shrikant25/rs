@@ -12,7 +12,7 @@ void insert();
 FR_FLGBLK * createblk(unsigned int);
 void insertblk(FR_FLGBLK *);
 void build(int);
-int write_to_file(char *, unsigned int, unsigned long int);
+int write_to_file(char *, int *, unsigned long int);
 int write_flags_todisk(unsigned int);
 FR_FLGBLK_LST FFLST;
 unsigned long int *flags;
@@ -45,16 +45,44 @@ void display(){
 
 int write_flags_todisk(unsigned int flg_datasz){
 	
-	unsigned int data_written = 0;
+	char *chptr;
 	unsigned int fd = open(DSKINF.diskname, O_WRONLY);
-	
-	lseek(fd, 2, SEEK_SET);
-	data_written = write(fd, flags, flg_datasz);
-	close(fd);
-	if(data_written != flg_datasz)
-		return -1;
-	return 0;
-	
+	flg_datasz /= 8;
+	int i, j, k;
+	printf("\nflags  %lx\n", flags[6]);
+	printf("\nflags  %lx\n", flags[7]);
+	printf("\nflags  %lx\n", flags[8]);
+	printf("\n%u\n", flg_datasz);	
+	if(fd){
+		i = 1;
+		k = 0;
+		while(k<flg_datasz){
+
+			memset(buffer, '\0', DSKINF.blksz);
+			j = 0;
+//			printf("here");
+			while(j<DSKINF.blksz){
+				chptr = (char *)&(flags[k]);
+				buffer[j++] = *chptr++;
+				buffer[j++] = *chptr++;
+				buffer[j++] = *chptr++;
+				buffer[j++] = *chptr++;
+				buffer[j++] = *chptr++;
+				buffer[j++] = *chptr++;
+				buffer[j++] = *chptr++;
+				buffer[j++] = *chptr;
+				k++;
+			}
+			
+			vdwrite(fd, buffer, i, DSKINF.blksz);
+			i++;
+
+		}
+	printf("doe");
+		close(fd);
+		return 0;
+	}
+	return -1;
 }	
 
 
@@ -98,6 +126,8 @@ int main(int argc, char *argv[]){
 	unsigned int readsize;
 	int chunks;
 	unsigned long int usrflsz;
+	FFLST.frblkcnt = 0;
+	FFLST.head = NULL;
 	
 	if(fd){
 		read(fd, &ch, sizeof(char));
@@ -114,8 +144,8 @@ int main(int argc, char *argv[]){
 		DSKINF.blkcnt = DSKINF.dsksz/DSKINF.blksz;
 		DSKINF.flgblkcnt = (DSKINF.blkcnt/8) / DSKINF.blksz; //512
 
-		readsize = DSKINF.flgblkcnt / (ULBCNT);	
-	
+		readsize = DSKINF.blkcnt / 8;	
+		printf("\nreadsize is %d\n", readsize);
 		flags = malloc(readsize);
 		rdcnt = readflags(fd, readsize);
 
@@ -134,8 +164,8 @@ int main(int argc, char *argv[]){
 		
 		printf("total blcks %d\n", FFLST.frblkcnt);
 		
-		printf("largest available block is at %d\n", FFLST.head->loc+DSKINF.flgblkcnt+1);
-		printf("largest available block is at %ld\n", ((FFLST.head->loc+DSKINF.flgblkcnt)*DSKINF.blksz)+1);
+		printf("largest available block is at %d\n", FFLST.head->loc);
+		printf("largest available block is at %ld\n", ((FFLST.head->loc)*DSKINF.blksz)+1);
 		printf("total empty  blocks %d\n", FFLST.head->cnt);
 		printf("total empty  bytes %ld\n", (FFLST.head->cnt)*DSKINF.blksz);
 		
@@ -147,7 +177,10 @@ int main(int argc, char *argv[]){
 			//unsigned int blockptr_blocks_required = ceil((blocks_required * sizeof(int))/DSKINF.blksz);
 
 			close(fd);
-			if(write_to_file("c.txt", ((FFLST.head->loc+DSKINF.flgblkcnt +1)*DSKINF.blksz)+1, usrflsz) == -1){
+			int a[10];
+			a[0] = FFLST.head->loc/DSKINF.blksz;
+			printf(" a0 %d\n", a[0]);
+			if(write_to_file("c.txt", a, usrflsz) == -1){
 				perror("Failed to write file to disk");
 				exit(EXIT_FAILURE);
 			}

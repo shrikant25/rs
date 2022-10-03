@@ -1,3 +1,4 @@
+#include<stdio.h>
 #include "vdheader.h"
 #include <stdlib.h>
 #include <math.h>
@@ -6,7 +7,8 @@
 void insertblk(FR_FLGBLK *newfr_blk){
 
 	FR_FLGBLK **temp = &(FFLST.head);
-
+	FFLST.frblkcnt++;
+	printf(" FFLST.frblkcnt %d\n", FFLST.frblkcnt);
 	while(*temp != NULL){
 		
 		if((*temp)->cnt > newfr_blk->cnt)
@@ -14,6 +16,8 @@ void insertblk(FR_FLGBLK *newfr_blk){
 	
 		else break;
 	}
+	newfr_blk->next = *temp;
+	*temp = newfr_blk;
 
 }
 	/* newfr_blk->next = *temp;

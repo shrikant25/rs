@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 
-unsigned int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int flbegloc){
+unsigned int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int *flbegloc){
 	
 	int i, j;
 	FL_METADATA flmtd;
@@ -15,12 +15,13 @@ unsigned int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int fl
 	char *chptr;
 
 	strcpy(flmtd.flnm, usrflnm);
-	flmtd.strtloc = flbegloc;
+	flmtd.isavailable = 1;
+	flmtd.strtloc = flbegloc[0];
 	flmtd.flsz = usrflsz;
 	
 	mtdata_block = (DSKINF.blkcnt - mtdata_block) - 1;
 	
-	fd = open(DSKINF.diskname, O_WRONLY);
+	fd = open(DSKINF.diskname, O_RDWR);
 	memset(buffer, '\0', DSKINF.blksz);
 	vdread(fd, buffer, mtdata_block, DSKINF.blksz);
 
@@ -43,6 +44,8 @@ unsigned int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int fl
 		vdread(fd, buffer, 0, DSKINF.blksz);
 		
 		chptr = (char *)&DSKINF.ttlmetadata_blks;
+		printf("size is %d\n", buffer[0]);
+		printf("size is %d\n", buffer[1]);
 		buffer[2] = *chptr++;
 		buffer[3] = *chptr++;
 		buffer[4] = *chptr++;
@@ -60,12 +63,12 @@ unsigned int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int fl
 }
 
 
-int write_to_file(char *usrflnm, unsigned int *beg_loc,unsigned long int byte_cnt){
+int write_to_file(char *usrflnm,  int *beg_loc,unsigned long int byte_cnt){
 	
 	
-	setbits(beg_loc-(DSKINF.flgblkcnt*DSKINF.blksz), byte_cnt, 0);
+	//setbits(beg_loc-(DSKINF.flgblkcnt*DSKINF.blksz), byte_cnt, 0);
 	unsigned int urfl_fd = open(usrflnm, O_RDONLY);
-	unsigned int disk_fd = open(DSKINF.diskname, O_WRONLY);
+	unsigned int disk_fd = open(DSKINF.diskname, O_RDWR);
 	unsigned int bytes_to_write = 0;
 	unsigned long int flbyte_cnt = byte_cnt;
 	int i = 0;
@@ -73,16 +76,16 @@ int write_to_file(char *usrflnm, unsigned int *beg_loc,unsigned long int byte_cn
 	if(!(urfl_fd && disk_fd)) return -1;
 
 	//lseek(disk_fd, beg_loc-1, SEEK_SET);
-	printf("begloc %d and bytecnt %ld\n", beg_loc, flbyte_cnt);
+	printf("begloc %d and bytecnt %ld\n", beg_loc[0], flbyte_cnt);
 	
 	while(flbyte_cnt>0){
 
 		bytes_to_write = flbyte_cnt > BUFLEN ? BUFLEN : flbyte_cnt;				
-		setbits(beg_loc[i]-(DSKINF.flgblkcnt*DSKINF.blksz), bytes_to_write, 0);
+		setbits(beg_loc[i], bytes_to_write, 0);
 		memset(buffer, '\0', DSKINF.blksz);
 		read(urfl_fd, buffer, bytes_to_write);
 		//write(disk_fd, data_buf, bytes_to_write);
-
+			printf("writing at block %d\n", beg_loc[i]);
 		vdwrite(disk_fd, buffer, beg_loc[i++], DSKINF.blksz);
 		flbyte_cnt -= bytes_to_write;
 		printf("%d bytes written \n", bytes_to_write);

@@ -1,20 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
 #include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
+#include <math.h>
+#include "vdsyslib.h"
 #define BUFLEN 1024
 
 typedef struct FL_METADATA{
 	char flnm[64];
+    unsigned int isavailable;
 	unsigned int strtloc;
+
 	unsigned int flsz;
 }FL_METADATA;
 
-
+int vdread(int, char*, int, int);
 int main(int argc, char *argv[]){
   
    int fd = open(argv[1], O_RDONLY);
@@ -24,15 +23,20 @@ int main(int argc, char *argv[]){
    char dsksz, blksz;
    int data_to_read = 0;
    
-   read(fd, &dsksz, sizeof(dsksz));
-   read(fd, &blksz, sizeof(blksz));
-   lseek(fd, 6, SEEK_CUR);
-   read(fd, flags, sizeof(flags));
+   read(fd, &dsksz, sizeof(char));
+   read(fd, &blksz, sizeof(char));
    
-   printf("filesize  %d\n", dsksz);
+  unsigned int ttlmetadatablks = 0;
+  read(fd, &ttlmetadatablks, sizeof(int));
+   printf("ttlmetadatablks %u\n", ttlmetadatablks);
+ 
+ lseek(fd, 1024, SEEK_SET);
+
+   read(fd, flags, sizeof(flags));
+  printf("filesize  %d\n", dsksz);
    printf("blocksize  %d\n", blksz);	
    
-   for(int i =0; i<65528; i++){
+   for(int i = 0; i<65528; i++){
    	 printf("flag[%d] %lx\n", i, flags[i]);
    }
    
@@ -44,44 +48,56 @@ int main(int argc, char *argv[]){
 printf("\n");
 */
 
-  lseek(fd, -5, SEEK_END);
-  unsigned int ttlmetadatablks;
-  read(fd, &ttlmetadatablks, sizeof(ttlmetadatablks));
-  FL_METADATA flmtd;
-	
-	printf("ttlmetadatablks %u\n", ttlmetadatablks);
-	
-  for(int i=1; i<=ttlmetadatablks; i++){
- 		lseek(fd, -(i*sizeof(flmtd)+5), SEEK_END);
- 		read(fd, &flmtd, sizeof(flmtd));
- 		printf("i = %d\n", i);
- 		printf("filename %s\n", flmtd.flnm); 
- 		printf("start loc %u\n", flmtd.strtloc);
- 		printf("filesz %u\n", flmtd.flsz);
- 		printf("\n\n");
-  }	
-  
-  char newname[100] = "";
+  unsigned int curblock = (pow(2,dsksz))/(pow(2,blksz));
+  FL_METADATA *flmtd;
 
-  strcat(newname, "new_");
-strcat(newname, flmtd.flnm);
-  printf("new name %s", newname);
-  
-  fd1 = open(newname , O_WRONLY | O_CREAT, 00777);
-  if(fd1){
-  lseek(fd, flmtd.strtloc-1, SEEK_SET); 
-  data_to_read = flmtd.flsz;
-  
-  while(data_to_read > 0){
-  	read(fd, buf, sizeof(char)*BUFLEN);
-  	write(fd1, buf, sizeof(char)*BUFLEN);
-  	data_to_read -= BUFLEN;
-  }
-}else{
-	printf("failed to display");
-}
 
-  close(fd1);
+	
+ int i = 1;
+ while(i<=ttlmetadatablks){
+   vdread(fd, buf, curblock-i,1024);
+
+   int mtdblks = blksz/sizeof(FL_METADATA);
+   for(int j = 0; j<mtdblks && i<=ttlmetadatablks; j++){
+      flmtd = (FL_METADATA *)buf;
+
+      if(flmtd->isavailable){
+
+
+            printf("filename %s\n", flmtd->flnm); 
+            printf("start loc %u\n", flmtd->isavailable);
+            printf("start loc %u\n", flmtd->strtloc);
+            printf("filesz %u\n", flmtd->flsz);
+            printf("\n\n");   
+
+
+            char newname[100] = "";
+
+            strcat(newname, "new_");
+           strcat(newname, flmtd->flnm);
+            printf("new name %s", newname);
+        
+          fd1 = open(newname , O_WRONLY | O_CREAT, 00777);
+            if(fd1){
+              lseek(fd, flmtd->strtloc-1, SEEK_SET); 
+              data_to_read = flmtd->flsz;
+        
+              while(data_to_read > 0){
+                read(fd, buf, sizeof(char)*BUFLEN);
+                write(fd1, buf, sizeof(char)*BUFLEN);
+                data_to_read -= BUFLEN;
+              }
+                close(fd1);
+            }else{
+          printf("failed to display");
+             } 
+         }
+      }
+      i++;
+ }
+
+
+
   close(fd);
 
   return 0;

@@ -6,7 +6,6 @@
 #include "vdheader.h"
 #include "vdsyslib.h"
 
-int set_blkflgs(int, int, char *, unsigned int blksz);
 
 
 int set_blkflgs(int fd, int flgscnt, char * buffer, unsigned int blksz){
@@ -71,9 +70,9 @@ int main(int argc, char *argv[]){
    printf("flag blocks count : %d\n", flgblkcnt);
 
 
-  createfile(argv[1], (char *)dsksz);
+  createfile(argv[1], dsksz);
 
-   fd = open(argv[1], O_CREAT| O_WRONLY, 00777);
+   fd = open(argv[1], O_WRONLY, 00777);
    
   
    if(fd == -1){
