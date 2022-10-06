@@ -24,7 +24,13 @@ int set_blkflgs(int fd, int flgscnt, char * buffer, unsigned int blksz){
 	else
 		bytes_to_write = flgscnt/8;
 
-	memset(buffer, 0xFF, bytes_to_write);
+   if(i != 1){
+      memset(buffer, 0xFF, bytes_to_write);
+   }else{
+	   memset(buffer, 0x00, 64);
+      memset(buffer+64, 0xFE, 1);
+      memset(buffer+65, 0xFF, bytes_to_write-65);
+   }
   // 	printf("in c buffer is %d\n", buffer[0]);
 //	printf("%d written\n", bytes_to_write);
 	status = vdwrite(fd, buffer, i, blksz);

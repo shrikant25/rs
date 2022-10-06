@@ -169,7 +169,7 @@ int main(int argc, char *argv[]){
 		printf("total empty  blocks %d\n", FFLST.head->cnt);
 		printf("total empty  bytes %ld\n", (FFLST.head->cnt)*DSKINF.blksz);
 		
-		fd = open("c.txt", O_RDONLY);
+		fd = open("a.txt", O_RDONLY);
 		if(fd){
 			usrflsz = lseek(fd, 0, SEEK_END);
 
@@ -178,9 +178,10 @@ int main(int argc, char *argv[]){
 
 			close(fd);
 			int a[10];
-			a[0] = FFLST.head->loc/DSKINF.blksz;
+			
+			a[0] = FFLST.head->loc;
 			printf(" a0 %d\n", a[0]);
-			if(write_to_file("c.txt", a, usrflsz) == -1){
+			if(write_to_file("a.txt", a, usrflsz) == -1){
 				perror("Failed to write file to disk");
 				exit(EXIT_FAILURE);
 			}

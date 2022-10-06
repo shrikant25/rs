@@ -20,35 +20,7 @@ void insertblk(FR_FLGBLK *newfr_blk){
 	*temp = newfr_blk;
 
 }
-	/* newfr_blk->next = *temp;
-	*temp = newfr_blk;
-
-	if(FFLST.head == NULL){
-		FFLST.frblkcnt = 1;
-		FFLST.head = newfr_blk;
-	}
-	else{
 	
-		temp = FFLST.head;
-
-		FFLST.frblkcnt++;
-		
-		if(newfr_blk->cnt > temp->cnt)
-
-
-		if(FFLST.head->cnt < newfr_blk->cnt){
-			newfr_blk->next = FFLST.head;
-			FFLST.head = newfr_blk;	
-		}
-		else{
-			newfr_blk->next = FFLST.head->next;
-			FFLST.head->next = newfr_blk;
-		}
-	} */
-
-
-
-
 FR_FLGBLK * createblk(unsigned int bitloc){
 
 	FR_FLGBLK * blk = (FR_FLGBLK *)malloc(sizeof(FR_FLGBLK));
@@ -58,14 +30,26 @@ FR_FLGBLK * createblk(unsigned int bitloc){
 	return blk;
 }
 
+void display_lst(){
+	
+	FR_FLGBLK **temp = &(FFLST.head);
+
+	while(*temp != NULL){
+		printf("unsigned int loc %u\n", (*temp)->loc);
+		printf("unsigned int cnt %u\n", (*temp)->cnt);
+	 printf("\n\n");
+		temp = &(*temp)->next;
+	}
+}
+
 
 void build(int chunks){
 
 	int i,j;
 	unsigned long int temp = 0;
-	FR_FLGBLK *fr_flgblk = NULL;
+	FR_FLGBLK *fr_flgblk = NULL;	
 	
-	for(i=0; i<chunks; i++){
+	for(i=7; i<chunks; i++){
 
 		if(flags[i]){
 			for(j=0; j<ULBCNT; j++){
@@ -73,6 +57,7 @@ void build(int chunks){
 				if((flags[i]>>j) & 1){
 					
 					if(!fr_flgblk){
+						printf("i %d, j %d, val %d",i,j, (i*ULBCNT)+j);
 						fr_flgblk = createblk((i*ULBCNT)+j);
 						
 					}
@@ -94,6 +79,6 @@ void build(int chunks){
 	}	
 	if(fr_flgblk)
 		insertblk(fr_flgblk);	
-
+	display_lst();
 }
 

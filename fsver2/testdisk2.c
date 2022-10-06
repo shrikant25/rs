@@ -6,7 +6,7 @@
 #define BUFLEN 1024
 
 typedef struct FL_METADATA{
-	char flnm[64];
+	char flnm[64-12];
     unsigned int isavailable;
 	unsigned int strtloc;
 
@@ -36,9 +36,9 @@ int main(int argc, char *argv[]){
   printf("filesize  %d\n", dsksz);
    printf("blocksize  %d\n", blksz);	
    
-   for(int i = 0; i<65528; i++){
+   /*for(int i = 0; i<65536; i++){
    	 printf("flag[%d] %lx\n", i, flags[i]);
-   }
+   }*/
    
    
   /* lseek(fd, atoi(argv[2])-1, SEEK_SET);
@@ -50,41 +50,43 @@ printf("\n");
 
   unsigned int curblock = (pow(2,dsksz))/(pow(2,blksz));
   FL_METADATA *flmtd;
-
-
-	
+  printf("cur block %d is \n", curblock);
+	char *buf2 = malloc(sizeof(char) * 1024);
  int i = 1;
  while(i<=ttlmetadatablks){
-   vdread(fd, buf, curblock-i,1024);
+   vdread(fd, buf2, curblock-i,1024);
+  
+   int mtdblks = (pow(2,blksz))/sizeof(FL_METADATA);
+   printf("size of metada lovk %ld\n", sizeof(FL_METADATA));
+      flmtd = (FL_METADATA *)buf2;
 
-   int mtdblks = blksz/sizeof(FL_METADATA);
    for(int j = 0; j<mtdblks && i<=ttlmetadatablks; j++){
-      flmtd = (FL_METADATA *)buf;
 
       if(flmtd->isavailable){
 
 
             printf("filename %s\n", flmtd->flnm); 
-            printf("start loc %u\n", flmtd->isavailable);
+            printf("is availalble %u\n", flmtd->isavailable);
             printf("start loc %u\n", flmtd->strtloc);
             printf("filesz %u\n", flmtd->flsz);
             printf("\n\n");   
 
 
             char newname[100] = "";
-
             strcat(newname, "new_");
            strcat(newname, flmtd->flnm);
             printf("new name %s", newname);
         
           fd1 = open(newname , O_WRONLY | O_CREAT, 00777);
             if(fd1){
-              lseek(fd, flmtd->strtloc-1, SEEK_SET); 
+              lseek(fd, flmtd->strtloc*1024, SEEK_SET); 
               data_to_read = flmtd->flsz;
-        
+              printf("datat to read %d\n", data_to_read);
               while(data_to_read > 0){
+                  memset(buf, '\0', BUFLEN);
                 read(fd, buf, sizeof(char)*BUFLEN);
                 write(fd1, buf, sizeof(char)*BUFLEN);
+               printf("writing %s \n", buf);
                 data_to_read -= BUFLEN;
               }
                 close(fd1);
@@ -92,8 +94,10 @@ printf("\n");
           printf("failed to display");
              } 
          }
+          flmtd++;
+          i++;
       }
-      i++;
+
  }
 
 
