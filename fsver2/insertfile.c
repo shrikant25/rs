@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 
-unsigned int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int *flbegloc){
+unsigned int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int flbegloc){
 	
 	int i, j;
 	FL_METADATA flmtd;
@@ -17,7 +17,7 @@ unsigned int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int *f
 	strcpy(flmtd.flnm, usrflnm);
 	//strcat(flmtd.flnm, "\0");
 	flmtd.isavailable = 1;
-	flmtd.strtloc = flbegloc[0];
+	flmtd.strtloc = flbegloc;
 	flmtd.flsz = usrflsz;
 	mtdata_block = (DSKINF.blkcnt - mtdata_block) - 1;
 	fd = open(DSKINF.diskname, O_RDWR);
@@ -34,6 +34,7 @@ unsigned int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int *f
 	
 		printf("writing metadata in %u at %d\n", mtdata_block, j);
 		vdwrite(fd, buffer, mtdata_block, DSKINF.blksz);
+		setbits(&mtdata_block, 1, 0);
 
 		printf("filstatr loc %u\n", flmtd.strtloc);
 		printf("filsz %u\n", flmtd.flsz);
@@ -62,40 +63,96 @@ unsigned int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int *f
 }
 
 
-int write_to_file(char *usrflnm,  int *beg_loc,unsigned long int byte_cnt){
+//int write_to_file(char *usrflnm,  unsigned long int byte_cnt, unsigned int *blocks, int filedata_blocks, int blocksdata_blocks, unsigned int block_int_capacity){
+int write_to_file(char *usrflnm){
 	
+	unsigned int usrfl_fd = open(usrflnm, O_RDONLY);
+	if(!usrfl_fd) return -1;
 	
-	//setbits(beg_loc-(DSKINF.flgblkcnt*DSKINF.blksz), byte_cnt, 0);
-	unsigned int urfl_fd = open(usrflnm, O_RDONLY);
+	unsigned long int usrflsz = lseek(usrfl_fd, 0, SEEK_END);
+	lseek(usrfl_fd, 0, SEEK_SET);
+
+	unsigned int filedata_blocks = usrflsz/DSKINF.blksz;
+	unsigned int block_int_capacity = (DSKINF.blksz/sizeof(int)) - 1;
+	unsigned int blocksdata_blocks = ceil(filedata_blocks/block_int_capacity);
+	unsigned int total_blocks_required = filedata_blocks + blocksdata_blocks;
+	unsigned int *blocks = malloc(sizeof(int) * total_blocks_required);
+	int status = getempty_blocks(total_blocks_required, blocks);
+
+	if(status == -1)
+		return status;
+
+
 	unsigned int disk_fd = open(DSKINF.diskname, O_RDWR);
+	if(!disk_fd) return -1;
+
 	unsigned int bytes_to_write = 0;
-	unsigned long int flbyte_cnt = byte_cnt;
-	int i = 0;
+	char *chptr = NULL;
+	int temp, i, j, k, x;
+	
+	int filedata_blocks_ints = filedata_blocks;
+	k = blocksdata_blocks;
 
-	if(!(urfl_fd && disk_fd)) return -1;
+	i = 0;
+	while(filedata_blocks_ints > 0){
 
-	//lseek(disk_fd, beg_loc-1, SEEK_SET);
-	printf("begloc %d and bytecnt %ld\n", beg_loc[0], flbyte_cnt);
-	int b = beg_loc[i];
-	while(flbyte_cnt>0){
-
-		bytes_to_write = flbyte_cnt > BUFLEN ? BUFLEN : flbyte_cnt;				
-		setbits(b, bytes_to_write, 0);
 		memset(buffer, '\0', DSKINF.blksz);
-		read(urfl_fd, buffer, bytes_to_write);
-		//write(disk_fd, data_buf, bytes_to_write);
-			printf("writing at 0 indexed block %d\n", b);
-		vdwrite(disk_fd, buffer, b, DSKINF.blksz);
-		flbyte_cnt -= bytes_to_write;
-		printf("%d bytes written \n", bytes_to_write);
-		b++;
+		j = 0;
+		x = 0;
+		temp = 0;
+
+		while(x<block_int_capacity){
+		 
+		 	temp = blocks[k++];
+			chptr = &temp;
+			buffer[j++] = *chptr++;
+			buffer[j++] = *chptr++;
+			buffer[j++] = *chptr++;
+			buffer[j++] = *chptr++;
+			x++;
+			filedata_blocks_ints--;		
+		
+			if(filedata_blocks_ints <= 0) break;
+		}
+
+		temp = (k < blocksdata_blocks-1) ? k : -1;
+		chptr = &temp;
+
+		buffer[j++] = *chptr++;
+		buffer[j++] = *chptr++;
+		buffer[j++] = *chptr++;
+		buffer[j] = *chptr;
+	
+		vdwrite(disk_fd, buffer, blocks[i], DSKINF.blksz);
+		i++;
 	}
+	
+
+	//lseek(disk_fd, blocks-1, SEEK_SET);
+	//printf("begloc %d and bytecnt %ld\n", blocks[i], flbyte_cnt);
+	
+	//while(flbyte_cnt>0){
+	
+	while(i < total_blocks_required){
+
+		//bytes_to_write = flbyte_cnt > BUFLEN ? BUFLEN : flbyte_cnt;				
+		//setbits(blocks[i], bytes_to_write, 0);
+		memset(buffer, '\0', DSKINF.blksz);
+		read(usrfl_fd, buffer, DSKINF.blksz);
+		
+		printf("writing at 0 indexed block %d\n", blocks[i]);
+		vdwrite(disk_fd, buffer, blocks[i], DSKINF.blksz);
+		//flbyte_cnt -= bytes_to_write;
+		//printf("%d bytes written \n", bytes_to_write);
+		i++;
+	}
+	//}
 				
 	close(disk_fd);
-	close(urfl_fd);	
-	
-	write_metadata(usrflnm, byte_cnt, beg_loc);
-	
+	close(usrfl_fd);	
+
+	write_metadata(usrflnm, usrflsz, blocks[0]);
+	setbits(blocks, total_blocks_required, 0);
 	return 0;
 }
 

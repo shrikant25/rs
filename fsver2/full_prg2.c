@@ -12,7 +12,7 @@ void insert();
 FR_FLGBLK * createblk(unsigned int);
 void insertblk(FR_FLGBLK *);
 void build(int);
-int write_to_file(char *, int *, unsigned long int);
+int insert_file(char *);
 int write_flags_todisk(unsigned int);
 FR_FLGBLK_LST FFLST;
 unsigned long int *flags;
@@ -169,32 +169,17 @@ int main(int argc, char *argv[]){
 		printf("total empty  blocks %d\n", FFLST.head->cnt);
 		printf("total empty  bytes %ld\n", (FFLST.head->cnt)*DSKINF.blksz);
 		
-		fd = open("a.txt", O_RDONLY);
-		if(fd){
-			usrflsz = lseek(fd, 0, SEEK_END);
+		int filestatus = insert_file("a.txt");
 
-			//unsigned int blocks_required = ceil(usrflsz/DSKINF.blksz);
-			//unsigned int blockptr_blocks_required = ceil((blocks_required * sizeof(int))/DSKINF.blksz);
-
-			close(fd);
-			int a[10];
-			
-			a[0] = FFLST.head->loc;
-			printf(" a0 %d\n", a[0]);
-			if(write_to_file("a.txt", a, usrflsz) == -1){
-				perror("Failed to write file to disk");
+		if(filestatus == -1){
+			perror("Failed to write file to disk");
+			exit(EXIT_FAILURE);
+		}
+		else{   // update flag values inside the disk
+			if(write_flags_todisk(readsize) == -1){
+				perror("Failed to write flags\n");
 				exit(EXIT_FAILURE);
 			}
-			else{   // update flag values inside the disk
-				if(write_flags_todisk(readsize) == -1){
-					perror("Failed to write flags\n");
-					exit(EXIT_FAILURE);
-				}
-			}
-		
-		}
-		else{
-			printf("Failed to open file\n");
 		}
 		
 	//	display_flags();

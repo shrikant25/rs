@@ -86,9 +86,18 @@ int createfile(char *, unsigned long int);
 
 #ifndef _SETBITS
 #define _SETBITS
-int setbits(unsigned int, unsigned long int, unsigned int);
+int setbits(unsigned int *, int, int);
 #endif
 
+#ifndef _GETEMPTY_BLOCKS
+#define _GETEMPTY_BLOCKS
+int getempty_blocks(int, unsigned int *);
+#endif
+
+#ifndef _BUILD
+#define _BUILD
+void build(int);
+#endif
 
 #endif
 

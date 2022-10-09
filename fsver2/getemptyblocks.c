@@ -82,3 +82,31 @@ void build(int chunks){
 	display_lst();
 }
 
+
+int getempty_blocks(int blocks_required, unsigned int *blocks){
+
+	if(blocks_required > FFLST.frblkcnt || blocks_required <= 0) return -1;
+
+	FR_FLGBLK **temp;
+	unsigned int available_blocks_count = 0;
+	int i, j;
+	int block_in_series;
+
+	i = 0;
+	j = 0;
+
+	do{
+		if(j == 0){
+			temp = (temp == NULL) ? &FFLST.head : &(*temp)->next;
+			j = (*temp)->cnt;
+			block_in_series = (*temp)->loc;
+		}
+		
+		blocks[i++] = block_in_series++;
+		j--;
+		blocks_required--;
+	
+	}while(blocks_required > 0);
+
+	return 0;
+}
