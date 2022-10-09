@@ -2,41 +2,24 @@
 #include <math.h>
 #include "vdheader.h"
 
-int setbits(unsigned int beg_loc, unsigned long int bytes, unsigned int bitsign){ 
-	
-	
-	unsigned int bitcnt = ceil((float)bytes/(float)DSKINF.blksz);
+int setbits(unsigned int *beg_loc, int total_blocks_required, int bitsign){ 
+
+	int i;
 	unsigned int flag = 0;
 	unsigned int startbit_inflag = 0;
-	unsigned int loc = beg_loc;
-	loc += 1; // dont want data to start at 0
-	unsigned int num_bits_manp = 0;
+	unsigned int block_num = 0;
 	
-	printf("\nbitcnt %d\n", bitcnt);
-    
-	while(bitcnt){
+	for(i = 0; i<total_blocks_required; i++){
+		
+		block_num = beg_loc[i]+1;
+		
+		flag = ceil((float)block_num/(float)ULBCNT);
+		startbit_inflag = block_num - ((flag-1) * ULBCNT);
+		printf("ohh %u %d\n", flag, block_num);
+		flags[flag-1] = (flags[flag-1] & ~(1UL << (startbit_inflag-1))) | (bitsign << (startbit_inflag-1)); 	
+		printf("ohh222222\n");
+		printf("\nafter %lx\n", flags[flag-1]);
+		   
+	}	
 	
-		flag = ceil((float)loc/(float)ULBCNT);
-	printf("\nbefore %lx\n", flags[flag-1]);
-	
-		startbit_inflag = loc - ((flag-1) * ULBCNT);
-		loc -= startbit_inflag;
-
-		if(startbit_inflag == 1 && bitcnt>=ULBCNT){
-			flags[flag-1] = 0xFFFFFFFFFFFFFFFF * bitsign;
-			startbit_inflag = 65;
-			bitcnt -= 64;
-		}
-		else{
-	        	while(startbit_inflag<=ULBCNT && bitcnt>0){
-				flags[flag-1] = (flags[flag-1] & ~(1UL << (startbit_inflag-1))) | (bitsign << (startbit_inflag-1)); 	
-				bitcnt--;            
-				startbit_inflag++;		
-			}                                      
-		}		
-		       				       
-		loc += startbit_inflag;
-	}
-	printf("\nafter %lx\n", flags[flag-1]);
-
 }

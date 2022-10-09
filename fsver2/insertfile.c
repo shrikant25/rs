@@ -2,7 +2,8 @@
 #include "vdsyslib.h"
 #include <string.h>
 #include <stdio.h>
-
+#include <stdlib.h>
+#include <math.h>
 
 unsigned int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int flbegloc){
 	
@@ -64,11 +65,12 @@ unsigned int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int fl
 
 
 //int write_to_file(char *usrflnm,  unsigned long int byte_cnt, unsigned int *blocks, int filedata_blocks, int blocksdata_blocks, unsigned int block_int_capacity){
-int write_to_file(char *usrflnm){
+int insert_file(char *usrflnm){
 	
-	unsigned int usrfl_fd = open(usrflnm, O_RDONLY);
-	if(!usrfl_fd) return -1;
-	
+	printf("in function\n");
+	unsigned int usrfl_fd = open(usrflnm, O_RDONLY, 00777);
+	if(usrfl_fd == -1) return -1;
+	printf("beyound\n");
 	unsigned long int usrflsz = lseek(usrfl_fd, 0, SEEK_END);
 	lseek(usrfl_fd, 0, SEEK_SET);
 
@@ -82,9 +84,9 @@ int write_to_file(char *usrflnm){
 	if(status == -1)
 		return status;
 
-
+	printf("got empty blocks\n");
 	unsigned int disk_fd = open(DSKINF.diskname, O_RDWR);
-	if(!disk_fd) return -1;
+	if(disk_fd == -1) return -1;
 
 	unsigned int bytes_to_write = 0;
 	char *chptr = NULL;
@@ -104,7 +106,7 @@ int write_to_file(char *usrflnm){
 		while(x<block_int_capacity){
 		 
 		 	temp = blocks[k++];
-			chptr = &temp;
+			chptr = (char *)&temp;
 			buffer[j++] = *chptr++;
 			buffer[j++] = *chptr++;
 			buffer[j++] = *chptr++;
@@ -116,7 +118,7 @@ int write_to_file(char *usrflnm){
 		}
 
 		temp = (k < blocksdata_blocks-1) ? k : -1;
-		chptr = &temp;
+		chptr = (char *)&temp;
 
 		buffer[j++] = *chptr++;
 		buffer[j++] = *chptr++;
@@ -152,6 +154,7 @@ int write_to_file(char *usrflnm){
 	close(usrfl_fd);	
 
 	write_metadata(usrflnm, usrflsz, blocks[0]);
+	printf("bruhhh\n");
 	setbits(blocks, total_blocks_required, 0);
 	return 0;
 }

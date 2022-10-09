@@ -7,8 +7,7 @@
 void insertblk(FR_FLGBLK *newfr_blk){
 
 	FR_FLGBLK **temp = &(FFLST.head);
-	FFLST.frblkcnt++;
-	printf(" FFLST.frblkcnt %d\n", FFLST.frblkcnt);
+
 	while(*temp != NULL){
 		
 		if((*temp)->cnt > newfr_blk->cnt)
@@ -19,6 +18,8 @@ void insertblk(FR_FLGBLK *newfr_blk){
 	newfr_blk->next = *temp;
 	*temp = newfr_blk;
 
+	FFLST.frblkcnt += newfr_blk->cnt;
+	printf(" FFLST.frblkcnt %d\n", FFLST.frblkcnt);
 }
 	
 FR_FLGBLK * createblk(unsigned int bitloc){
@@ -87,10 +88,10 @@ int getempty_blocks(int blocks_required, unsigned int *blocks){
 
 	if(blocks_required > FFLST.frblkcnt || blocks_required <= 0) return -1;
 
-	FR_FLGBLK **temp;
+	FR_FLGBLK **temp = NULL;
 	unsigned int available_blocks_count = 0;
 	int i, j;
-	int block_in_series;
+	unsigned int block_in_series;
 
 	i = 0;
 	j = 0;
@@ -100,6 +101,7 @@ int getempty_blocks(int blocks_required, unsigned int *blocks){
 			temp = (temp == NULL) ? &FFLST.head : &(*temp)->next;
 			j = (*temp)->cnt;
 			block_in_series = (*temp)->loc;
+			printf("bli in serisk %d\n", block_in_series);
 		}
 		
 		blocks[i++] = block_in_series++;
