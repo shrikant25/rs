@@ -169,7 +169,7 @@ int main(int argc, char *argv[]){
 		printf("total empty  blocks %d\n", FFLST.head->cnt);
 		printf("total empty  bytes %ld\n", (FFLST.head->cnt)*DSKINF.blksz);
 		
-		int filestatus = insert_file("a.txt");
+		int filestatus = insert_file("b.txt");
 
 		if(filestatus == -1){
 			perror("Failed to write file to disk");

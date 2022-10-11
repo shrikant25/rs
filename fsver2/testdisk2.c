@@ -50,14 +50,14 @@ printf("\n");
 
   unsigned int curblock = (pow(2,dsksz))/(pow(2,blksz));
   FL_METADATA *flmtd;
-  printf("cur block %d is \n", curblock);
+  //printf("cur block %d is \n", curblock);
 	char *buf2 = malloc(sizeof(char) * 1024);
  int i = 1;
  while(i<=ttlmetadatablks){
    vdread(fd, buf2, curblock-i,1024);
   
    int mtdblks = (pow(2,blksz))/sizeof(FL_METADATA);
-   printf("size of metada lovk %ld\n", sizeof(FL_METADATA));
+ //  printf("size of metada lovk %ld\n", sizeof(FL_METADATA));
       flmtd = (FL_METADATA *)buf2;
 
    for(int j = 0; j<mtdblks && i<=ttlmetadatablks; j++){
@@ -79,16 +79,57 @@ printf("\n");
         
           fd1 = open(newname , O_WRONLY | O_CREAT, 00777);
             if(fd1){
-              lseek(fd, flmtd->strtloc*1024, SEEK_SET); 
-              data_to_read = flmtd->flsz;
-              printf("datat to read %d\n", data_to_read);
-              while(data_to_read > 0){
-                  memset(buf, '\0', BUFLEN);
-                read(fd, buf, sizeof(char)*BUFLEN);
-                write(fd1, buf, sizeof(char)*BUFLEN);
-               printf("writing %s \n", buf);
-                data_to_read -= BUFLEN;
+           //   printf("jmmmmmmmmmmmmmmmmmmmm");
+              //lseek(fd, flmtd->strtloc*1024, SEEK_SET); 
+              unsigned int data_to_read = flmtd->flsz;
+              unsigned int filedata_blocks = data_to_read/1024;
+              unsigned int block_int_capacity = (1024/sizeof(int)) - 1;
+              unsigned int blocksdata_blocks = ceil((float)filedata_blocks/(float)block_int_capacity);
+              unsigned int total_data_read = 0;
+              unsigned int read_amount = 0 ;
+
+             printf("datat to read %d\n %u %u\n %u\n", data_to_read, block_int_capacity,filedata_blocks,blocksdata_blocks);
+
+              char * buffer2 = malloc(sizeof(char) * 1024);
+              char * buffer3 = malloc(sizeof(char) * 1024);
+
+              int tempk = flmtd->strtloc;
+              
+              for(int l = 0; l<blocksdata_blocks; l++){
+                  vdread(fd, buffer2, tempk, 1024);
+                  int u = 0;
+                  printf(" tempk %u\n", tempk);
+                   int *blk = (int *)&buffer2[0];
+                 printf("blk is %d\n", *blk);
+                  memset(buffer3, '\0', 1024);
+
+                  while(*blk > 0 && u!= 255){
+            
+                    read_amount = (data_to_read - total_data_read < 1024) ? data_to_read - total_data_read : 1024;
+                    vdread(fd, buffer3, *blk, 1024);
+                    total_data_read += read_amount;
+                    write(fd1, buffer3, read_amount);
+                 //   printf("%s\n", buffer3);
+                    u++;
+                    blk++;
+                    printf("blk is--- %d\n", *blk);
+                  }
+                  tempk = *blk;
               }
+
+
+
+
+              // while(data_to_read > 0){
+              
+              //     for(i)
+
+              //     memset(buf, '\0', BUFLEN);
+              //     read(fd, buf, sizeof(char)*BUFLEN);
+              //     write(fd1, buf, sizeof(char)*BUFLEN);
+              //     printf("writing %s \n", buf);
+              //     data_to_read -= BUFLEN;
+              // }
                 close(fd1);
             }else{
           printf("failed to display");

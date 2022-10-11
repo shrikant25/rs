@@ -74,12 +74,18 @@ int insert_file(char *usrflnm){
 	unsigned long int usrflsz = lseek(usrfl_fd, 0, SEEK_END);
 	lseek(usrfl_fd, 0, SEEK_SET);
 
-	unsigned int filedata_blocks = usrflsz/DSKINF.blksz;
+	unsigned int filedata_blocks = ceil((float)usrflsz/(float)DSKINF.blksz);
 	unsigned int block_int_capacity = (DSKINF.blksz/sizeof(int)) - 1;
-	unsigned int blocksdata_blocks = ceil(filedata_blocks/block_int_capacity);
+	unsigned int blocksdata_blocks = ceil((float)filedata_blocks/(float)block_int_capacity);
+	printf("user file size %lu\n", usrflsz);
+	printf("filedata blocks %u\n", filedata_blocks);
+	printf("blockdata bloicks %u", blocksdata_blocks);
 	unsigned int total_blocks_required = filedata_blocks + blocksdata_blocks;
 	unsigned int *blocks = malloc(sizeof(int) * total_blocks_required);
 	int status = getempty_blocks(total_blocks_required, blocks);
+
+	for(int p = 0; p<total_blocks_required; p++)
+		printf("i %d : b is %d\n", p, blocks[p]);
 
 	if(status == -1)
 		return status;
@@ -117,14 +123,14 @@ int insert_file(char *usrflnm){
 			if(filedata_blocks_ints <= 0) break;
 		}
 
-		temp = (k < blocksdata_blocks-1) ? k : -1;
+		temp = (k < filedata_blocks-1) ? blocks[i+1] : 0;
 		chptr = (char *)&temp;
 
 		buffer[j++] = *chptr++;
 		buffer[j++] = *chptr++;
 		buffer[j++] = *chptr++;
 		buffer[j] = *chptr;
-	
+		printf("writing at blockl %d\n", blocks[i]);
 		vdwrite(disk_fd, buffer, blocks[i], DSKINF.blksz);
 		i++;
 	}
@@ -134,25 +140,30 @@ int insert_file(char *usrflnm){
 	//printf("begloc %d and bytecnt %ld\n", blocks[i], flbyte_cnt);
 	
 	//while(flbyte_cnt>0){
-	
-	while(i < total_blocks_required){
+	printf("blsk re%u\n", total_blocks_required);
+	int u = 0;
+	while(u < filedata_blocks-1){
 
 		//bytes_to_write = flbyte_cnt > BUFLEN ? BUFLEN : flbyte_cnt;				
 		//setbits(blocks[i], bytes_to_write, 0);
 		memset(buffer, '\0', DSKINF.blksz);
 		read(usrfl_fd, buffer, DSKINF.blksz);
 		
-		printf("writing at 0 indexed block %d\n", blocks[i]);
+		//printf("writing at 0 indexed block %d\n", blocks[i]);
 		vdwrite(disk_fd, buffer, blocks[i], DSKINF.blksz);
+		printf("writing at blockl %d\n", blocks[i]);
+		//printf("%d -- %s\n",  blocks[i],buffer);
 		//flbyte_cnt -= bytes_to_write;
 		//printf("%d bytes written \n", bytes_to_write);
 		i++;
+		u++;
+		printf("u is %d iledata_blocks %d\n", u, filedata_blocks);
 	}
 	//}
 				
 	close(disk_fd);
 	close(usrfl_fd);	
-
+	printf("astal la vista baby");
 	write_metadata(usrflnm, usrflsz, blocks[0]);
 	printf("bruhhh\n");
 	setbits(blocks, total_blocks_required, 0);
