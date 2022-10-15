@@ -9,43 +9,46 @@ int deletefile(char *filename){
   
 	unsigned int disk_fd = open(DSKINF.diskname, O_RDWR);
    
-    char *buf2 = malloc(sizeof(char) * DSKINF.blksz);
     int i = 1;
     int curblock = DSKINF.dsksz/DSKINF.blksz;
   
     while(i<=ttlmetadatablks){
 
-        vdread(fd, buf2, curblock-i, DSKINF.blksz);
+        memset(buffer, '\0', DSKINF.blksz);
+        vdread(fd, buffer, curblock-i, DSKINF.blksz);
         int mtdblks = (pow(2,blksz))/sizeof(FL_METADATA);
-        int *buffer2 = malloc(sizeof(int) * DSKINF.blksz);
+        char *buffer2 = malloc(sizeof(char) * DSKINF.blksz);
+        int *buffer3 = malloc(sizeof(int) * DSKINF.blksz);
         int *blk = NULL;
         int flag = 0;
         int u = 0;
-        flmtd = (FL_METADATA *)buf2;
+        flmtd = (FL_METADATA *)buffer;
 
         for(int j = 0; j<mtdblks && i<=ttlmetadatablks; j++){
 
             if(flmtd->isavailable){
 
-                if(!strcmp(filename, flmtd->filename)){
+                if(!strcmp(filename, flmtd->flnm)){
              
                     int tempk = flmtd->strtloc;
                     
                     for(int l = 0; l<blocksdata_blocks; l++){
                         
-                        vdread(fd, buffer, tempk, DSKINF.blksz);
+                        memset(buffer2, '\0', DSKINF.blksz);
+                        vdread(fd, buffer2, tempk, DSKINF.blksz);
                         u = 0;
-                        blk = (int *)&buffer[0];
-                        memset(buffer, '\0', 1024);
+                        blk = (int *)&buffer2[0];
+                        
 
+                        memset(buffer3, '\0', DSKINF.blksz);
                         while(*blk > 0 && u!= 255){
 
-                            buffer2[u] = *blk;
+                            buffer3[u] = *blk;
                             u++;
                             blk++;
                            
                         }
-                        setbits(buffer2, u-1, 1);
+                        setbits(buffer3, u-1, 1);
                         tempk = *blk;
                     }
 

@@ -5,45 +5,80 @@
 #include <stdlib.h>
 #include <math.h>
 
-unsigned int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int flbegloc){
-	
-	int i, j;
-	FL_METADATA flmtd;
-	unsigned int fd;
-	unsigned int mtdata_loc = DSKINF.ttlmetadata_blks*sizeof(FL_METADATA);
-	unsigned int mtdata_block = mtdata_loc / DSKINF.blksz;
- 	unsigned int mtdata_loc_in_bloc = mtdata_loc - (mtdata_block * DSKINF.blksz);
-	char *chptr;
+int *get_emptmtdblk_loc(int fd, unsigned int *blk, unsigned int *loc_in_blk){
 
-	strcpy(flmtd.flnm, usrflnm);
-	//strcat(flmtd.flnm, "\0");
-	flmtd.isavailable = 1;
-	flmtd.strtloc = flbegloc;
-	flmtd.flsz = usrflsz;
-	mtdata_block = (DSKINF.blkcnt - mtdata_block) - 1;
-	fd = open(DSKINF.diskname, O_RDWR);
-	memset(buffer, '\0', DSKINF.blksz);
-	vdread(fd, buffer, mtdata_block, DSKINF.blksz);
+	unsigned int i,j = 0;	
+	unsigned int mtdata_blocks = DSKINF.blksz/sizeof(FL_METADATA);
+ 	unsigned int mtdata_loc_in_bloc = 0;
+	unsigned int curblock = DSKINF.dsksz/DSKINF.blksz;
+	FL_METADATA *flmtptr = NULL;
 
-	chptr = (char *)&flmtd;
-	j = mtdata_loc_in_bloc;
-	for(i = 0; i < sizeof(FL_METADATA); i++){
-		buffer[j+i] = *chptr++;
+	i = 1;
+	while(i<DSKINF.ttlmetadata_blks){
+
+		memset(buffer, '\0', DSKINF.blksz);
+		vdread(fd, buffer, curblock-i, DSKINF.blksz);
+		flmtptr = (FL_METADATA *)buffer;
+
+		j = 0;
+		if(i > DSKINF.ttlmetadata_blks){
+			*blk = curblock-i;
+			*loc_in_blk = j;
+			return 0;
+		}
+
+		while(j<mtdata_blocks && i<=DSKINF.ttlmetadata_blks){
+			if(!flmtptr->isavailable){	
+				mtdata_loc_in_bloc = j * sizeof(FL_METADATA);
+				*blk = curblock-i;
+				*loc_in_blk = j;
+				return flmtptr;
+			}
+			j++;
+			i++;
+		}				
 	}
+	return NULL;
+}
 
-	if(fd){
+int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int flbegloc){
 	
-		printf("writing metadata in %u at %d\n", mtdata_block, j);
-		vdwrite(fd, buffer, mtdata_block, DSKINF.blksz);
-		setbits(&mtdata_block, 1, 0);
+	FL_METADATA flmtd;
+	FL_METADATA *flmtptr = NULL;
+	unsigned int fd  = 0;
+	char *buffer2 = malloc(sizeof(char) * DSKINF.blksz);
+	char *chptr = NULL;
+	int i = 1;
+	int j = 0;
+	int found = 0;
+
+	fd = open(DSKINF.diskname, O_RDWR);
+	
+	if(fd){
+
+		get_emptmtdblk_loc(fd);
+				
+		memset(buffer2, '\0', DSKINF.blksz);
+		strcpy(flmtd.flnm, usrflnm);
+		flmtd.isavailable = 1;
+		flmtd.strtloc = flbegloc;
+		flmtd.flsz = usrflsz;
+
+		chptr = (char *)&flmtd;
+		for(i = 0; i < sizeof(FL_METADATA); i++){
+			buffer2[mtdata_loc_in_bloc] = *chptr++;
+		}
+
+		vdwrite(fd, buffer2, curblock-i, DSKINF.blksz);
+		setbits(&curblock-i, 1, 0);
 
 		printf("filstatr loc %u\n", flmtd.strtloc);
 		printf("filsz %u\n", flmtd.flsz);
 		DSKINF.ttlmetadata_blks += 1;
-		
-		memset(buffer, '\0', DSKINF.blksz);
-		vdread(fd, buffer, 0, DSKINF.blksz);
-		
+
+		memset(buffer2, '\0', DSKINF.blksz);
+		vdread(fd, buffer2, 0, DSKINF.blksz);
+
 		chptr = (char *)&DSKINF.ttlmetadata_blks;
 		printf("size is %d\n", buffer[0]);
 		printf("size is %d\n", buffer[1]);
@@ -52,15 +87,27 @@ unsigned int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int fl
 		buffer[4] = *chptr++;
 		buffer[5] = *chptr;
 
-		vdwrite(fd, buffer, 0, DSKINF.blksz);
+		vdwrite(fd, buffer2, 0, DSKINF.blksz);
 		printf("total metadata blocks in the end %d\n", DSKINF.ttlmetadata_blks);
 		close(fd);
-		
-	}
-	else
-		return -1;
-	
-	return 0;
+		found = 1;
+			} 
+
+			if(found)
+				break;
+
+			j++;
+		}
+
+		if(found)
+			break;
+
+		i++;
+			}
+		}
+		else
+			return -1;
+		return 0;
 }
 
 
