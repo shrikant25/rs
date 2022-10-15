@@ -9,105 +9,107 @@ int *get_emptmtdblk_loc(int fd, unsigned int *blk, unsigned int *loc_in_blk){
 
 	unsigned int i,j = 0;	
 	unsigned int mtdata_blocks = DSKINF.blksz/sizeof(FL_METADATA);
- 	unsigned int mtdata_loc_in_bloc = 0;
-	unsigned int curblock = DSKINF.dsksz/DSKINF.blksz;
+	unsigned int curblock = (DSKINF.dsksz/DSKINF.blksz)-1;
 	FL_METADATA *flmtptr = NULL;
+	// before taking value of curblock check wether its bit is set or not
+	if(DSKINF.ttlmetadata_blks == 0){
+		*blk = curblock;
+		*loc_in_blk = 0;
+		return 0;
+	}
 
 	i = 1;
-	while(i<DSKINF.ttlmetadata_blks){
+	while(i<=DSKINF.ttlmetadata_blks){
 
 		memset(buffer, '\0', DSKINF.blksz);
-		vdread(fd, buffer, curblock-i, DSKINF.blksz);
+		vdread(fd, buffer, curblock, DSKINF.blksz);
 		flmtptr = (FL_METADATA *)buffer;
-
-		j = 0;
-		if(i > DSKINF.ttlmetadata_blks){
-			*blk = curblock-i;
-			*loc_in_blk = j;
-			return 0;
-		}
 
 		while(j<mtdata_blocks && i<=DSKINF.ttlmetadata_blks){
 			if(!flmtptr->isavailable){	
-				mtdata_loc_in_bloc = j * sizeof(FL_METADATA);
-				*blk = curblock-i;
+				*blk = curblock;
 				*loc_in_blk = j;
-				return flmtptr;
+				return 0;
 			}
 			j++;
 			i++;
-		}				
+		}
+		
+		if(j>=mtdata_blocks){
+			curblock--;		
+			j = 0;
+		}	
 	}
+
+	if(i > DSKINF.ttlmetadata_blks){
+		*blk = curblock;
+		*loc_in_blk = j;
+		return 0;
+	}
+
+
 	return NULL;
 }
+
 
 int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int flbegloc){
 	
 	FL_METADATA flmtd;
 	FL_METADATA *flmtptr = NULL;
 	unsigned int fd  = 0;
-	char *buffer2 = malloc(sizeof(char) * DSKINF.blksz);
 	char *chptr = NULL;
 	int i = 1;
 	int j = 0;
+	unsigned int blk, loc_in_blk;
 	int found = 0;
 
 	fd = open(DSKINF.diskname, O_RDWR);
 	
 	if(fd){
 
-		get_emptmtdblk_loc(fd);
-				
-		memset(buffer2, '\0', DSKINF.blksz);
-		strcpy(flmtd.flnm, usrflnm);
-		flmtd.isavailable = 1;
-		flmtd.strtloc = flbegloc;
-		flmtd.flsz = usrflsz;
+		found = get_emptmtdblk_loc(fd, &blk, &loc_in_blk);
 
-		chptr = (char *)&flmtd;
-		for(i = 0; i < sizeof(FL_METADATA); i++){
-			buffer2[mtdata_loc_in_bloc] = *chptr++;
-		}
+		if(found){	
 
-		vdwrite(fd, buffer2, curblock-i, DSKINF.blksz);
-		setbits(&curblock-i, 1, 0);
+			memset(buffer, '\0', DSKINF.blksz);
+			strcpy(flmtd.flnm, usrflnm);
+			flmtd.isavailable = 1;
+			flmtd.strtloc = flbegloc;
+			flmtd.flsz = usrflsz;
 
-		printf("filstatr loc %u\n", flmtd.strtloc);
-		printf("filsz %u\n", flmtd.flsz);
-		DSKINF.ttlmetadata_blks += 1;
-
-		memset(buffer2, '\0', DSKINF.blksz);
-		vdread(fd, buffer2, 0, DSKINF.blksz);
-
-		chptr = (char *)&DSKINF.ttlmetadata_blks;
-		printf("size is %d\n", buffer[0]);
-		printf("size is %d\n", buffer[1]);
-		buffer[2] = *chptr++;
-		buffer[3] = *chptr++;
-		buffer[4] = *chptr++;
-		buffer[5] = *chptr;
-
-		vdwrite(fd, buffer2, 0, DSKINF.blksz);
-		printf("total metadata blocks in the end %d\n", DSKINF.ttlmetadata_blks);
-		close(fd);
-		found = 1;
-			} 
-
-			if(found)
-				break;
-
-			j++;
-		}
-
-		if(found)
-			break;
-
-		i++;
+			chptr = (char *)&flmtd;
+			for(i = 0; i < sizeof(FL_METADATA); i++){
+				buffer[loc_in_blk] = *chptr++;
 			}
+
+			vdwrite(fd, buffer, blk, DSKINF.blksz);
+			setbits(blk, 1, 0);
+
+			printf("filstatr loc %u\n", flmtd.strtloc);
+			printf("filsz %u\n", flmtd.flsz);
+			DSKINF.ttlmetadata_blks += 1;
+
+			memset(buffer, '\0', DSKINF.blksz);
+			vdread(fd, buffer, 0, DSKINF.blksz);
+
+			chptr = (char *)&DSKINF.ttlmetadata_blks;
+			printf("size is %d\n", buffer[0]);
+			printf("size is %d\n", buffer[1]);
+			buffer[2] = *chptr++;
+			buffer[3] = *chptr++;
+			buffer[4] = *chptr++;
+			buffer[5] = *chptr;
+
+			vdwrite(fd, buffer, 0, DSKINF.blksz);
+			printf("total metadata blocks in the end %d\n", DSKINF.ttlmetadata_blks);
+			close(fd);
 		}
 		else
 			return -1;
-		return 0;
+	}
+	else
+		return -1;
+	return 0;
 }
 
 
