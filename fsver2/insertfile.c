@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-int *get_emptmtdblk_loc(int fd, unsigned int *blk, unsigned int *loc_in_blk){
+int *get_emtmtdblk_loc(int fd, unsigned int *blk, unsigned int *loc_in_blk){
 
 	unsigned int i,j = 0;	
 	unsigned int mtdata_blocks = DSKINF.blksz/sizeof(FL_METADATA);
@@ -67,7 +67,7 @@ int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int flbegloc){
 	
 	if(fd){
 
-		found = get_emptmtdblk_loc(fd, &blk, &loc_in_blk);
+		found = get_emtmtdblk_loc(fd, &blk, &loc_in_blk);
 
 		if(found){	
 
