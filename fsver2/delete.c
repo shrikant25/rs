@@ -9,12 +9,10 @@ int deletefile(char *filename){
   
 	int disk_fd = open(DSKINF.diskname, O_RDWR);
    
-    int i = 1;
-    int curblock = DSKINF.dsksz/DSKINF.blksz;
-  
-    // loop untill all metadatablocks are read
-    while(i<=DSKINF.ttlmetadata_blks){
-
+    if(disk_fd){
+        
+        int i = 1;
+        int curblock = DSKINF.dsksz/DSKINF.blksz;
         // total metadatablocks that can be stored in a disk block
         int mtdblks = DSKINF.blksz/sizeof(FL_METADATA);
 
@@ -33,74 +31,80 @@ int deletefile(char *filename){
         //buffer to store integers 
         char *buffer2 = malloc(sizeof(char) * DSKINF.blksz);
 
-        // varilabel
+        // variable to store current int block
         unsigned int tempcurrent_block = 0;
-        int *blk = NULL;
-        int flag = 0;
-        int u = 0;
+
+        unsigned int *blk = NULL;
+        int u,l,j, i = 0;
 
         // pointer to point to individual blocks in buffer
         FL_METADATA *flmtd;   
 
+        // loop untill all metadatablocks are read
+        while(i<=DSKINF.ttlmetadata_blks){
 
-        memset(buffer, '\0', DSKINF.blksz);
-        // read the last block of disk, because metadata is stored from last block
-        vdread(disk_fd, buffer, curblock-i, DSKINF.blksz);
+            memset(buffer, '\0', DSKINF.blksz);
+            // read the last block of disk, because metadata is stored from last block
+            vdread(disk_fd, buffer, curblock-i, DSKINF.blksz);
 
-        // point to  buffer with a pointer of type FL_METADAT
-        flmtd = (FL_METADATA *)buffer;
+            // point to  buffer with a pointer of type FL_METADAT
+            flmtd = (FL_METADATA *)buffer;
 
-        // loop untill there are no more metadatablocks to be read or entire buffer is read
-        for(int j = 0; j<mtdblks && i<=DSKINF.ttlmetadata_blks; j++){
-            
-            // check if block is set to available 
-            // block is only set to available when it contains data of a file that is present in disk
-            // and if filename in block matches with the filename given as input
-            if(flmtd->isavailable && (!strcmp(filename, flmtd->flnm))){ 
-
-                //
-                unsigned int tempk = flmtd->strtloc;
-                // based on file size calculate how many blocks will be required to store file data
-                // based on those blocks, calculate how many blocks will be required to store integer values of data blocks
-                unsigned int datablocks = ceil((float)flmtd->flsz/(float)DSKINF.blksz);
-                unsigned int blocksof_ints = ceil((float)datablocks/(float)blockint_capacity);
-                unsigned int totalblocks = datablocks + blocksof_ints;
+            // loop untill there are no more metadatablocks to be read or entire buffer is read
+            for(j = 0; j<mtdblks && i<=DSKINF.ttlmetadata_blks; j++){
                 
-                //read all the blocks containing the integers
+                // check if block is set to available 
+                // block is only set to available when it contains data of a file that is present in disk
+                // and if filename in block matches with the filename given as input
+                if(flmtd->isavailable && (!strcmp(filename, flmtd->flnm))){ 
 
-                for(int l = 0; l<blocksof_ints; l++){
+                    //store value of first block that contains integers
+                    tempcurrent_block = flmtd->strtloc;
                     
-                    memset(buffer2, '\0', DSKINF.blksz);
-                    vdread(disk_fd, buffer2, tempk, DSKINF.blksz);
-                    u = 0;
-                    blk = (int *)&buffer2[0];
+                    // based on file size calculate how many blocks will be required to store file data
+                    // based on those blocks, calculate how many blocks will be required to store integer values of data blocks
+                    datablocks = ceil((float)flmtd->flsz/(float)DSKINF.blksz);
+                    blocksof_ints = ceil((float)datablocks/(float)blockint_capacity);
+                    totalblocks = datablocks + blocksof_ints;
+                    
+                    //read all the blocks containing the integers
 
-                    memset(buffer3, '\0', DSKINF.blksz);
-                    while(*blk > 0 && u!= 255){
-
-                    setbits(buffer3, u-1, 1);
-                        u++;
-                        blk++;
+                    for(l = 0; l<blocksof_ints; l++){
                         
-                    }
-                    setbits(&tempk, 1, 1);
-                    tempk = *blk;
-                }
+                        memset(buffer2, '\0', DSKINF.blksz);
+                        // read the block
+                        vdread(disk_fd, buffer2, tempcurrent_block, DSKINF.blksz);
+                        u = 0;
 
-                flmtd->isavailable = 0;
-                flag = 1;
-                break;
+                        //point to first integer value in buffer
+                        blk = (int *)&buffer2[0];
+
+                        // iterate untill all values in buffer are read or no more values are left(i.e a zero has occured)
+                        while(*blk > 0 && u!= 255){
+
+                            setbits(blk, 1, 1); // set the bit for particular data block as 1 (i.e it is now availabel to write)
+                            u++;
+                            blk++;
+                            
+                        }
+
+                        setbits(&tempcurrent_block, 1, 1); // set the bit for particular integer block as 1 (i.e it is now availabel to write)
+                        tempcurrent_block = *blk; // point to next integer block using the last value in buffer
+                    }
+
+                    flmtd->isavailable = 0; // set the block is unavailable
+                    close(disk_fd);
+                    return 0;
+                }
+                
+                flmtd++; // represents the metatdata count in buffer, the buffer can contain available as well as unavailabel blocks
+
+                if(flmtd->isavailable) // if only a availabel block is read only then increment the count 
+                    i++;
             }
 
-            flmtd++;
-            i++;
         }
-
-        if(flag) break;
-
+        close(disk_fd);
     }
-
-  close(disk_fd);
-
-  return 0;
+    return -1;
 }
