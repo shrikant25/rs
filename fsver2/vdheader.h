@@ -30,10 +30,10 @@ typedef struct FR_FLGBLK_LST{
 #ifndef _FL_METADATA
 #define _FL_METADATA
 typedef struct FL_METADATA{
-	char flnm[ULBCNT-12];
-	unsigned int isavailable;
+	char flnm[52];
 	unsigned int strtloc;
 	unsigned int flsz;
+	unsigned int isavailable;
 }FL_METADATA;
 #endif
 
@@ -44,7 +44,7 @@ typedef struct DISKINFO{
 	unsigned int ttlmetadata_blks;
 	unsigned long int dsksz;
 	unsigned long int blksz;
-	unsigned int blkcnt;
+	unsigned long int blkcnt;
 	unsigned int flgblkcnt;
 }DISKINFO;
 #endif
@@ -97,6 +97,11 @@ int getempty_blocks(int, unsigned int *);
 #ifndef _BUILD
 #define _BUILD
 void build(int);
+#endif
+
+#ifndef _WRITE_TO_BUFFER
+#define _WRITE_TO_BUFFER
+write_to_buffer(char *, void *, unsigned int, unsigned int);
 #endif
 
 #endif
