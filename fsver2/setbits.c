@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <math.h>
-#include "vdheader.h"
+#include "constants.h"
 
-int setbits(unsigned int *beg_loc, int total_blocks_required, int bitsign){ 
+int setbits(unsigned int *beg_loc, int total_blocks_required, int bitsign, unsigned long int *flags){ 
 
 	int i;
 	unsigned int flag = 0;
@@ -13,13 +13,9 @@ int setbits(unsigned int *beg_loc, int total_blocks_required, int bitsign){
 		
 		block_num = beg_loc[i]+1;
 		
-		flag = ceil((float)block_num/(float)ULBCNT);
-		startbit_inflag = block_num - ((flag-1) * ULBCNT);
-	//	printf("ohh %u %d\n", flag, block_num);
+		flag = ceil((float)block_num/(float)VDQAUD);
+		startbit_inflag = block_num - ((flag-1) * VDQAUD);
 		flags[flag-1] = (flags[flag-1] & ~(1UL << (startbit_inflag-1))) | (bitsign << (startbit_inflag-1)); 	
-	//	printf("ohh222222\n");
-		//printf("\nafter %lx\n", flags[flag-1]);
 		   
 	}	
-	
 }

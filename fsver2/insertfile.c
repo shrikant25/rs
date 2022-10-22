@@ -93,7 +93,6 @@ int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int flbegloc, i
 	// it is considered as a valid block
 	// if it is set to unavailable 
 	// then it can be used to store data of some other file
-	flmtd.isavailable = 1; 
 	flmtd.strtloc = flbegloc;
 	flmtd.flsz = usrflsz;
 

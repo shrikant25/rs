@@ -1,14 +1,5 @@
-#ifndef _COMMONVAR_H
-#define _COMMONVAR_H
-
-
-#ifndef _BUFLEN
-#define BUFLEN 1024
-#endif
-
-#ifndef _ULBCNT
-#define ULBCNT 64 
-#endif
+#ifndef _VDHEADER_H
+#define _VDHEADER_H
 
 #ifndef _FR_FLGBLK
 #define _FR_FLGBLK
@@ -25,16 +16,6 @@ typedef struct FR_FLGBLK_LST{
 	FR_FLGBLK *head;
 	unsigned int frblkcnt;
 }FR_FLGBLK_LST;
-#endif
-
-#ifndef _FL_METADATA
-#define _FL_METADATA
-typedef struct FL_METADATA{
-	char flnm[52];
-	unsigned int strtloc;
-	unsigned int flsz;
-	unsigned int isavailable;
-}FL_METADATA;
 #endif
 
 #ifndef _DISKINFO
@@ -57,11 +38,6 @@ extern DISKINFO DSKINF;
 #ifndef _FFLST
 #define _FFLST
 extern FR_FLGBLK_LST FFLST;
-#endif
-
-#ifndef _BUFFER
-#define _BUFFER
-extern char *buffer;
 #endif
 
 #ifndef _FLAGS
@@ -101,7 +77,7 @@ void build(int);
 
 #ifndef _WRITE_TO_BUFFER
 #define _WRITE_TO_BUFFER
-write_to_buffer(char *, void *, unsigned int, unsigned int);
+void write_to_buffer(char *, char *, unsigned int, unsigned int);
 #endif
 
 #endif
