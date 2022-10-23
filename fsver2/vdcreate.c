@@ -74,7 +74,7 @@ int main(int argc, char *argv[]){
    
    int i, j;
    int fd = 0;
-   char *chptr = NULL;
+   unsigned char *chptr = NULL;
    unsigned int val = 0;
    short int flgsts = 0;
    unsigned long int dsksz = 0;
@@ -130,26 +130,27 @@ int main(int argc, char *argv[]){
    memset(flags, 0xFF, flags_arrsz*VDQUAD);
 
    //first block will be used to store other metadata
-   preoccupied_blocks = 1 + flgblkcnt + total_metadata_blocks;
+   preoccupied_blocks = 1 + flgblkcnt + dsk_blk_for_mtdata;
    preoccupied_blocks_list = malloc(sizeof(unsigned int) * preoccupied_blocks);
-
+   printf("preoccupied blocks\n %d\n", preoccupied_blocks);
    for(i = 0; i<preoccupied_blocks; i++){
       preoccupied_blocks_list[i] = i;
    }
-
-   setbits(preoccupied_blocks_list, preoccupied_blocks, 0x0, flags);
-   int flags_per_blocks = blksz/(VDQUAD * VDBYTESZ); 
-   int k = 0;
-   for(i = 1; i<flgblkcnt; i++){
+   setbits(preoccupied_blocks_list, preoccupied_blocks, 0, flags);
    
-      memset(buffer, 0, blksz);
-      for(j = 0; j<flags_per_blocks; j++){
-         chptr = (char *)&flags[k++];
-         write_to_buffer(buffer, chptr, VDQUAD, j*VDQUAD);
-      }
-      vdwrite(fd, buffer, i, blksz);
-   }
+   int flags_per_block = blksz/(VDQUAD * VDBYTESZ); 
+   printf("flags_per_block %d\n",flags_per_block);
+   int k = 0;
+   printf("flblkcnt  %d\n", flgblkcnt);
 
+   chptr = (char *)flags;
+   for(i = 1; i<=flgblkcnt; i++){
+      memset(buffer, 0, blksz);
+      write_to_buffer(buffer, chptr, blksz, 0);
+      vdwrite(fd, buffer, i, blksz);
+      chptr = chptr + blksz;
+   }
+   
    // write metadata blocks
    create_metadata_blocks(fd, total_metadata_blocks, metadata_block_offset, blksz);
    

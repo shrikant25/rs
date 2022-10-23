@@ -45,25 +45,14 @@ extern FR_FLGBLK_LST FFLST;
 extern unsigned long int *flags;
 #endif
 
-#ifndef _VDREAD
-#define _VDREAD
-int vdread(int, char*, int, int);
-#endif
 
-#ifndef _VDWRITE
-#define _VDWRITE
-int vdwrite(int, char*, int , int);
-#endif
 
 #ifndef _CREATEFILE
 #define _CREATEFILE
 int createfile(char *, unsigned long int);
 #endif
 
-#ifndef _SETBITS
-#define _SETBITS
-int setbits(unsigned int *, int, int);
-#endif
+
 
 #ifndef _GETEMPTY_BLOCKS
 #define _GETEMPTY_BLOCKS
