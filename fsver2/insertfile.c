@@ -1,5 +1,7 @@
-#include "vdheader.h"
+#include "vdrun_disk.h"
+#include "vddiskinfo.h"
 #include "vdsyslib.h"
+#include "vdfile_metadata.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -151,7 +153,7 @@ int insert_file(char *usrflnm){
 	
 	// count how many intergers can be stored in one block 
 	// here integer represents the block number of each block used to store the data of file
-	unsigned int block_int_capacity = (DSKINF.blksz/sizeof(int)) - 1;
+	unsigned int block_int_capacity = (DSKINF.blksz/sizeof(int));
 	
 	// count how many blocks will be required to store all integers
 	unsigned int blocksdata_blocks = ceil((float)filedata_blocks/(float)block_int_capacity);
@@ -163,7 +165,7 @@ int insert_file(char *usrflnm){
 	// total blocks required to store all the data
 	unsigned int total_blocks_required = filedata_blocks + blocksdata_blocks;
 	
-	// createa an array to store all integers
+	// create an array to store all integers
 	unsigned int *blocks = malloc(sizeof(unsigned int) * total_blocks_required);
 	int status, p;
 	unsigned int blk; 

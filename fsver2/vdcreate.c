@@ -9,15 +9,20 @@
 #include "vdsetbits.h"
 #include "vddriver.h"
 #include "vdwrite_to_buffer.h"
+#include "vdwrite_flags_to_disk.h"
+#include "vddiskinfo.h"
 
 #define METADATA_BLOCKS_RATIO 1/(VDQUAD * VDBYTESZ * VDKB)
 
-int createfile(char *filename, unsigned long int dsksz){
+int createfile(DSKINFO);
+int create_metadata_blocks(int, DSKINFO);
+
+int createfile(DISKINFO DSKINF){
 
    int pid;
    int status;
    char disksize[11];
-   sprintf(disksize, "%ld", dsksz);
+   sprintf(disksize, "%ld", DSKINF.dsksz);
    
    pid = fork();
    if(pid == -1){
@@ -28,7 +33,7 @@ int createfile(char *filename, unsigned long int dsksz){
    }
    else{
      
-      char* cargv[5] = {"fallocate", "-l", disksize, filename, NULL};
+      char* cargv[5] = {"fallocate", "-l", disksize, DSKINF.diskname, NULL};
 	   execvp(cargv[0], cargv);
 
 	exit(0);
@@ -38,11 +43,11 @@ int createfile(char *filename, unsigned long int dsksz){
 }
 
 
-int create_metadata_blocks(int fd, unsigned int total_metadata_blocks, unsigned int metadata_block_offset, unsigned long int blksz){
+int create_metadata_blocks(int fd, DISKINFO DSKINF){
    
    unsigned int i,j;
-   char *buffer = malloc(sizeof(char) * blksz);
-   unsigned int ttl_mtdblks_in_dskblk = sizeof(FL_METADATA)/blksz;
+   char *buffer = malloc(sizeof(char) * DSKINF.blksz);
+   unsigned int ttl_mtdblks_in_dskblk = sizeof(FL_METADATA)/DSKINF.blksz;
    FL_METADATA flmtd;
 
    strcpy(flmtd.flnm, "");
@@ -50,16 +55,18 @@ int create_metadata_blocks(int fd, unsigned int total_metadata_blocks, unsigned 
 	flmtd.flsz = 0;
 	flmtd.isavailable = 1;
 
-   memset(buffer, '\0', blksz);
+   memset(buffer, '\0', DSKINF.blksz);
 
    for(j = 0; j<ttl_mtdblks_in_dskblk; j++){
       write_to_buffer(buffer, (char *)&flmtd, sizeof(FL_METADATA), sizeof(FL_METADATA)*j);
    }
 
-   for(i = metadata_block_offset; i<total_metadata_blocks; i++){
-      vdwrite(fd, buffer, i, blksz);
+   for(i = DSKINF.mtdta_blk_ofst; i<DSKINF.ttlmtdta_blks; i++){
+      vdwrite(fd, buffer, i, DSKINF.blksz);
    }
  
+   free(buffer);
+   
    return 0;
 
 }
@@ -75,88 +82,59 @@ int main(int argc, char *argv[]){
    int i, j;
    int fd = 0;
    unsigned char *chptr = NULL;
-   unsigned int val = 0;
-   short int flgsts = 0;
-   unsigned long int dsksz = 0;
-   unsigned int dsksz_exp = 0;
-   unsigned long int blksz = 0;
-   unsigned int blksz_exp = 0;
-   unsigned int total_metadata_blocks;
-   unsigned long int blkcnt = 0;
-   unsigned int flgblkcnt = 0;
-   unsigned int metadata_block_offset = 0;
    unsigned char *buffer;
    unsigned int preoccupied_blocks = 0;
-   unsigned int *preoccupied_blocks_list;
-   unsigned int dsk_blk_for_mtdata = 0; 
+   unsigned int *preoccupied_blocks_list; 
    unsigned long int *flags = NULL;
-   unsigned int flags_arrsz = 0;
+   DISKINFO DSKINF;
 
-   dsksz_exp = atoi(argv[2]);
-   blksz_exp = atoi(argv[3]);
-   dsksz = pow(2, dsksz_exp);
-   blksz = pow(2, blksz_exp);
-   buffer = calloc((blksz), sizeof(char));
+   DSKINF.dsksz = pow(2, atoi(argv[2]));
+   DSKINF.blksz = pow(2, atoi(argv[3]));
+   buffer = calloc((DSKINF.blksz), sizeof(char));
 
-   blkcnt = dsksz/blksz;
-   flags_arrsz = blkcnt/(VDQUAD * VDBYTESZ); 
-   flgblkcnt = (blkcnt/blksz)/(VDBYTE*VDBYTESZ);
-   total_metadata_blocks = dsksz * METADATA_BLOCKS_RATIO;
-   dsk_blk_for_mtdata = (sizeof(FL_METADATA)*total_metadata_blocks)/blksz;
-   metadata_block_offset = flgblkcnt + 1; // after flagblocks 
+   DSKINF.blkcnt = DSKINF.dsksz/DSKINF.blksz;
+   DSKINF.flags_arrsz = DSKINF.blkcnt/(VDQUAD * VDBYTESZ); 
+   DSKINF.flgblkcnt = (DSKINF.blkcnt/DSKINF.blksz)/(VDBYTE*VDBYTESZ);
+   DSKINF.ttlmtdta_blks = DSKINF.dsksz * METADATA_BLOCKS_RATIO;
+   DSKINF.dsk_blk_for_mtdata = (sizeof(FL_METADATA)*DSKINF.ttlmtdta_blks)/DSKINF.blksz;
+   DSKINF.mtdta_blk_ofst = DSKINF.flgblkcnt + 1; // after flagblocks 
+   
+   printf("flag blocks count : %d\n", DSKINF.flgblkcnt);
+   printf("total metadata blocks  %u\n", DSKINF.ttlmtdta_blks);
+   printf("dsk blocks required for metadata blocks %d\n", DSKINF.ttlmtdta_blks);
 
-   flags = malloc(sizeof(unsigned long int) * flags_arrsz);
-
-   printf("flag blocks count : %d\n", flgblkcnt);
-   printf("total metadata blocks  %u\n", total_metadata_blocks);
-   printf("dsk blocks required for metadata blocks %d\n", dsk_blk_for_mtdata);
-
-   createfile(argv[1], dsksz);
+   createfile(DSKINF);
  
-   fd = open(argv[1], O_WRONLY, 00777);
+   fd = open(DSKINF.diskname, O_WRONLY, 00777);
 
    if(fd == -1){
       write(1, "Disk creation failed\n", 21);
       exit(EXIT_FAILURE);
    }
   
-   memset(buffer, 0, blksz);
-   write_to_buffer(buffer, (char *)&dsksz, VDQUAD, 0);
-   write_to_buffer(buffer, (char *)&blksz, VDQUAD, 8);
-   write_to_buffer(buffer, (char *)&total_metadata_blocks, VDDOUBLE_WORD, 16);
-   write_to_buffer(buffer, (char *)&metadata_block_offset, VDDOUBLE_WORD, 20);
+   memset(buffer, 0, DSKINF.blksz);
+   write_to_buffer(buffer, (char *)&DSKINF, sizeof(DSKINF), 0);
+   vdwrite(fd, buffer, 0, DSKINF.blksz);
 
-   vdwrite(fd, buffer, 0, blksz);
-   memset(flags, 0xFF, flags_arrsz*VDQUAD);
+   flags = malloc(sizeof(unsigned long int) * DSKINF.flags_arrsz);
+   memset(flags, 0xFF, DSKINF.flags_arrsz*VDQUAD);
 
-   //first block will be used to store other metadata
-   preoccupied_blocks = 1 + flgblkcnt + dsk_blk_for_mtdata;
+   preoccupied_blocks = 1 + DSKINF.flgblkcnt + DSKINF.dsk_blk_for_mtdata;
    preoccupied_blocks_list = malloc(sizeof(unsigned int) * preoccupied_blocks);
-   printf("preoccupied blocks\n %d\n", preoccupied_blocks);
+   
    for(i = 0; i<preoccupied_blocks; i++){
       preoccupied_blocks_list[i] = i;
    }
+   
    setbits(preoccupied_blocks_list, preoccupied_blocks, 0, flags);
-   
-   int flags_per_block = blksz/(VDQUAD * VDBYTESZ); 
-   printf("flags_per_block %d\n",flags_per_block);
-   int k = 0;
-   printf("flblkcnt  %d\n", flgblkcnt);
-
-   chptr = (char *)flags;
-   for(i = 1; i<=flgblkcnt; i++){
-      memset(buffer, 0, blksz);
-      write_to_buffer(buffer, chptr, blksz, 0);
-      vdwrite(fd, buffer, i, blksz);
-      chptr = chptr + blksz;
-   }
-   
-   // write metadata blocks
-   create_metadata_blocks(fd, total_metadata_blocks, metadata_block_offset, blksz);
+   write_flags_todisk(flags, DSKINF);
+   create_metadata_blocks(fd, DSKINF);
    
    write(1, "Disk creation successfull\n", 26);
  
    close(fd);
-  
+   free(buffer);
+   free(flags);
+
    return 0;
 }

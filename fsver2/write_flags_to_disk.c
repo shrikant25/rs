@@ -1,41 +1,25 @@
-int write_flags_todisk(unsigned int flg_datasz){
+#include "vdconstants.h"
+#include "vdsyslib.h"
+#include "vddiskinfo.h"
+
+int write_flags_todisk(unsigned long int *flags, DISKINFO DSKINF){
 	
 	char *chptr;
+	char *buffer = calloc(sizeof(DSKINF.blksz))
 	unsigned int fd = open(DSKINF.diskname, O_WRONLY);
-	flg_datasz /= 8;
-	int i, j, k;
-	printf("\nflags  %lx\n", flags[6]);
-	printf("\nflags  %lx\n", flags[7]);
-	printf("\nflags  %lx\n", flags[8]);
-	printf("\n%u\n", flg_datasz);	
+	int i, fd,
+	
 	if(fd){
-		i = 1;
-		k = 0;
-		while(k<flg_datasz){
-
-			memset(buffer, '\0', DSKINF.blksz);
-			j = 0;
-//			printf("here");
-			while(j<DSKINF.blksz){
-				chptr = (char *)&(flags[k]);
-				buffer[j++] = *chptr++;
-				buffer[j++] = *chptr++;
-				buffer[j++] = *chptr++;
-				buffer[j++] = *chptr++;
-				buffer[j++] = *chptr++;
-				buffer[j++] = *chptr++;
-				buffer[j++] = *chptr++;
-				buffer[j++] = *chptr;
-				k++;
-			}
-			
-			vdwrite(fd, buffer, i, DSKINF.blksz);
-			i++;
-
-		}
-	printf("doe");
+		chptr = (char *)flags;
+    	for(i = 1; i<=DSKINF.flgblkcnt; i++){
+			memset(buffer, 0, DSKINF.blksz);
+			write_to_buffer(buffer, chptr, DSKINF.blksz, 0);
+			vdwrite(fd, buffer, i, blksz);
+			chptr = chptr + blksz;
+	    }
 		close(fd);
 		return 0;
 	}
 	return -1;
+
 }	

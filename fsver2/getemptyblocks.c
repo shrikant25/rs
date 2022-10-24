@@ -1,5 +1,6 @@
 #include<stdio.h>
 #include "vdheader.h"
+#include "vdconstants.h" 
 #include <stdlib.h>
 #include <math.h>
 
@@ -22,6 +23,7 @@ void insertblk(FR_FLGBLK *newfr_blk){
 	printf(" FFLST.frblkcnt %d\n", FFLST.frblkcnt);
 }
 	
+
 FR_FLGBLK * createblk(unsigned int bitloc){
 
 	FR_FLGBLK * blk = (FR_FLGBLK *)malloc(sizeof(FR_FLGBLK));
@@ -44,24 +46,22 @@ void display_lst(){
 }
 
 
-void build(int chunks){
+void build(){
 
 	int i,j;
 	unsigned long int temp = 0;
 	FR_FLGBLK *fr_flgblk = NULL;	
-	
-	for(i=7; i<chunks; i++){
+	unsigned int flgs_chunks = (DSKINF.flgblkcnt * DSKINF.blksz)/(VDQUAD); 
+
+	for(i=0; i<flgs_chunks; i++){
 
 		if(flags[i]){
-			for(j=0; j<ULBCNT; j++){
+			for(j=0; j<(VDQUAD * VDBYTESZ); j++){
 					
 				if((flags[i]>>j) & 1){
 					
-					if(!fr_flgblk){
-						printf("i %d, j %d, val %d",i,j, (i*ULBCNT)+j);
-						fr_flgblk = createblk((i*ULBCNT)+j);
-						
-					}
+					if(!fr_flgblk)
+						fr_flgblk = createblk((i*(VDBYTESZ * VDQUAD))+j);
 					fr_flgblk->cnt++;
 				}
 				else{ 
@@ -80,6 +80,7 @@ void build(int chunks){
 	}	
 	if(fr_flgblk)
 		insertblk(fr_flgblk);	
+	
 	display_lst();
 }
 
