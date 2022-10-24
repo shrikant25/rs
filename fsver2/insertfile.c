@@ -1,7 +1,10 @@
+#include "vdconstants.h"
 #include "vdrun_disk.h"
 #include "vddiskinfo.h"
 #include "vdsyslib.h"
+#include "vdwrite_to_buffer.h"
 #include "vdfile_metadata.h"
+#include "vddriver.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -134,13 +137,39 @@ int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int flbegloc, i
 	return 0;
 }
 
+typedef struct DATA_LEVEL{
+	unsigned int block_cnt;
+	struct DATA_LEVEL *next;
+}DATA_LEVEL;
 
-int insert_file(char *usrflnm){
+DATA_LEVEL * new_val_node(unsigned int val){
+	DATA_LEVEL *new = malloc(sizeof(DATA_LEVEL));
+	new->next = NULL;
+	new->block_cnt = val;
+	return new;
+}
+
+void insert_val(unsigned int val, DATA_LEVEL **head){
+	DATA_LEVEL *new = new_val_node(val);
+	new->next = *head;
+	*head = new; 
+}
+
+
+int insert_file(char *usrflnm, DISKINFO DSKINF){
 	
 	printf("in function\n");
 	// open user file
 	// return if failed found
 	int usrfl_fd = open(usrflnm, O_RDONLY, 00777);
+	unsigned int val = 0;
+	unsigned int size;
+	unsigned int *blocks1 = NULL;
+	unsigned int *blocks2 = NULL;
+	unsigned int *temp_block = NULL;
+	int disk_fd;
+	char *buffer = malloc(sizeof(char) * DSKINF.blksz);
+	int i = 0;
 	if(usrfl_fd == -1) return -1;
 	printf("beyound\n");
 
@@ -150,23 +179,55 @@ int insert_file(char *usrflnm){
 
 	// count how many  blocks will be required for file data to be stored
 	unsigned int filedata_blocks = ceil((float)usrflsz/(float)DSKINF.blksz);
-	
+
 	// count how many intergers can be stored in one block 
 	// here integer represents the block number of each block used to store the data of file
 	unsigned int block_int_capacity = (DSKINF.blksz/sizeof(int));
-	
-	// count how many blocks will be required to store all integers
-	unsigned int blocksdata_blocks = ceil((float)filedata_blocks/(float)block_int_capacity);
-	
-	printf("user file size %lu\n", usrflsz);
-	printf("filedata blocks %u\n", filedata_blocks);
-	printf("blockdata bloicks %u", blocksdata_blocks);
-	
-	// total blocks required to store all the data
-	unsigned int total_blocks_required = filedata_blocks + blocksdata_blocks;
-	
-	// create an array to store all integers
-	unsigned int *blocks = malloc(sizeof(unsigned int) * total_blocks_required);
+	val = filedata_blocks/block_int_capacity;
+	DATA_LEVEL *head;
+	insert_val(val, &head);
+
+	while(val != 1){
+		val = val/block_int_capacity;
+		insert_val(val, &head);
+	}
+
+	blocks1 = malloc(sizeof(int) * block_int_capacity);
+	blocks2 = malloc(sizeof(int) * block_int_capacity);
+	DATA_LEVEL *level = head;
+	getempty_blocks(level->block_cnt, blocks1);
+	int beg_loc = blocks1[0];
+	DATA_LEVEL *data = head->next;
+		
+	//open disk, return if failed 
+	disk_fd = open(DSKINF.diskname, O_RDWR);
+	if(disk_fd == -1) return -1;
+
+	while(data != NULL){
+
+		int temp = data->block_cnt;
+		size = 0;
+
+		for(i = 0; i<level->block_cnt; i++){
+			
+			size = temp > block_int_capacity ? block_int_capacity : temp;
+			getempty_blocks(size, blocks2);
+			
+			memset(buffer, 0, DSKINF.blksz);
+			write_to_buffer(buffer, (char *)blocks2, size*VDDOUBLE_WORD, 0);
+			vdwrite(disk_fd, buffer, blocks1[i], DSKINF.blksz);
+			
+			temp -= size;
+		}
+
+		level = level->next;
+		temp_block = blocks1;
+		blocks1 = blocks2;
+		blocks2 = blocks1;
+		data = level->next;
+
+	}
+
 	int status, p;
 	unsigned int blk; 
 	unsigned int loc_in_blk;
@@ -176,16 +237,8 @@ int insert_file(char *usrflnm){
 	int temp, i, j, k, x, u;
 	int filedata_blocks_ints;
 
-	//open disk, return if failed 
-	disk_fd = open(DSKINF.diskname, O_RDWR);
-	if(disk_fd == -1) return -1;
 	
 	// get required empty blocks
-	// incase of failure return 
-	status = getempty_blocks(total_blocks_required, blocks);
-	if(status == -1)
-		return -1;
-
 	// get a location to store metadata
 	// failure to get metadata means, disk is full or doesnt have enough space to store metadata
 	// in any case of failure return
@@ -193,51 +246,11 @@ int insert_file(char *usrflnm){
 	if(status == -1)
 		return -1;
 
-	for(int p = 0; p<total_blocks_required; p++)
-		printf("i %d : b is %d\n", p, blocks[p]);
-
-	printf("got empty blocks\n");
 
 	// just a variant to be used in loop
 	filedata_blocks_ints = filedata_blocks;
 	k = blocksdata_blocks;
 
-	// loop untill all integers(that represent the number of blocks storing the data) are written on disk
-	i = 0;
-	while(filedata_blocks_ints > 0){
-
-		memset(buffer, '\0', DSKINF.blksz);
-		j = 0;
-		x = 0;
-		temp = 0;
-
-		while(x<block_int_capacity){ // each block can hold only a certain amoutn of integers
-		 
-		 	temp = blocks[k++];		 // store kth integers in temp
-			chptr = (char *)&temp;
-			buffer[j++] = *chptr++;  // write each byte of integer at jth positon in buffer
-			buffer[j++] = *chptr++;
-			buffer[j++] = *chptr++;
-			buffer[j++] = *chptr++;  
-			x++;					 // increment after every integer is written in buffer(keeps track of integers written in buffer)
-			filedata_blocks_ints--;	 // decrement after every integer is written (keeps track of overall integers that are been written)
-		
-			if(filedata_blocks_ints <= 0) break; // if all integers are written then break
-		}
-
-		// in every block that sotres integers, at last position there will be number of next block where data is stored
-		// when there are no more integers to be written, just write zero indicating the end of set of integers
-		temp = (k < filedata_blocks-1) ? blocks[i+1] : 0;
-		chptr = (char *)&temp;   			
-		buffer[j++] = *chptr++;     // write the bytes of integers to buffer
-		buffer[j++] = *chptr++;
-		buffer[j++] = *chptr++;
-		buffer[j] = *chptr;
-		printf("writing at blockl %d\n", blocks[i]);
-		vdwrite(disk_fd, buffer, blocks[i], DSKINF.blksz); // write the block to file
-		i++;		// increment to write integers in next block
-	}
-	
 
 	
 	printf("blsk re%u\n", total_blocks_required);
