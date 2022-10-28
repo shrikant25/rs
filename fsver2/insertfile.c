@@ -1,6 +1,7 @@
 #include "vdconstants.h"
 #include "vdrun_disk.h"
 #include "vddiskinfo.h"
+#include "vdsetbits.h"
 #include "vdsyslib.h"
 #include "vdwrite_to_buffer.h"
 #include "vdfile_metadata.h"
@@ -9,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
+/*
 int get_emtmtdblk_loc(int fd, unsigned int *blk, unsigned int *loc_in_blk){
 
 	unsigned int i,j;	
@@ -136,7 +137,7 @@ int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int flbegloc, i
 
 	return 0;
 }
-
+*/
 typedef struct DATA_LEVEL{
 	unsigned int block_cnt;
 	struct DATA_LEVEL *next;
@@ -152,16 +153,32 @@ DATA_LEVEL * new_val_node(unsigned int val){
 void insert_val(unsigned int val, DATA_LEVEL **head){
 	DATA_LEVEL *new = new_val_node(val);
 	new->next = *head;
-	*head = new; 
+	*head = new;
+	printf("insertign val %d\n", val); 
 }
 
 
-int insert_file(char *usrflnm, DISKINFO DSKINF){
+int insert_file(char *usrflnm, DISKINFO DSKINF, unsigned long int *flags, FR_FLGBLK_LST *FFLST){
 	
 	printf("in function\n");
 	// open user file
 	// return if failed found
-	int usrfl_fd = open(usrflnm, O_RDONLY, 00777);
+  //int usrfl_fd = open(usrflnm, O_RDONLY, 00777);
+  //if(usrfl_fd == -1) return -1;
+	unsigned long int usrflsz = 1 * 1024 * 1024;//lseek(usrfl_fd, 0, SEEK_END);
+
+	// get empty metadata block 
+	// if found then , else return -1
+	// check wether disk has enough size
+		// else retu 
+	// metadataloc = get_emtmtdblk_loc();
+	// if metadataloc > 0
+	// 
+	//		if(usrflsz > (FFLST->frblkcnt*DSKINF.blksz)){
+	//			return -2;
+	//	else
+	//		return -1
+
 	unsigned int val = 0;
 	unsigned int size;
 	unsigned int *blocks1 = NULL;
@@ -171,12 +188,9 @@ int insert_file(char *usrflnm, DISKINFO DSKINF){
 	char *buffer = malloc(sizeof(char) * DSKINF.blksz);
 	int i = 0;
 	DATA_LEVEL *level;
-	if(usrfl_fd == -1) return -1;
-	printf("beyound\n");
 
 	// get userfile size
-	unsigned long int usrflsz = lseek(usrfl_fd, 0, SEEK_END);
-	lseed(usrfl_fd, 0, SEEK_SET);
+	//lseek(usrfl_fd, 0, SEEK_SET);
 
 	// count how many  blocks will be required for file data to be stored
 	unsigned int filedata_blocks = ceil((float)usrflsz/(float)DSKINF.blksz);
@@ -184,25 +198,27 @@ int insert_file(char *usrflnm, DISKINFO DSKINF){
 	// count how many intergers can be stored in one block 
 	// here integer represents the block number of each block used to store the data of file
 	unsigned int block_int_capacity = (DSKINF.blksz/sizeof(int));
-	val = filedata_blocks/block_int_capacity;
+	val = filedata_blocks;
 	DATA_LEVEL *head;
-	insert_val(val, &head);
+	insert_val(filedata_blocks, &head);
 
 	while(val != 1){
-		val = val/block_int_capacity;
+		val = ceil((float)val/(float)block_int_capacity);
 		insert_val(val, &head);
 	}
 
 	blocks1 = malloc(sizeof(int) * block_int_capacity);
 	blocks2 = malloc(sizeof(int) * block_int_capacity);
 	level = head;
-	getempty_blocks(level->block_cnt, blocks1);
+	getempty_blocks(level->block_cnt, blocks1, FFLST);
+	setbits(blocks1, level->block_cnt, 0, flags);
+	build(DSKINF, flags, FFLST);
 	int beg_loc = blocks1[0];
 	DATA_LEVEL *data = head->next;
-		
+		 
 	//open disk, return if failed 
-	disk_fd = open(DSKINF.diskname, O_RDWR);
-	if(disk_fd == -1) return -1;
+//	disk_fd = open(DSKINF.diskname, O_RDWR);
+//	if(disk_fd == -1) return -1;
 
 	while(data != NULL){
 
@@ -210,53 +226,26 @@ int insert_file(char *usrflnm, DISKINFO DSKINF){
 		size = 0;
 
 		for(i = 0; i<level->block_cnt; i++){
-			
+
 			size = temp > block_int_capacity ? block_int_capacity : temp;
-			getempty_blocks(size, blocks2);
+			getempty_blocks(size, blocks2, FFLST);
+			setbits(blocks2, size, 0, flags);
+			build(DSKINF, flags, FFLST);
 			
 			memset(buffer, 0, DSKINF.blksz);
 			write_to_buffer(buffer, (char *)blocks2, size*VDDOUBLE_WORD, 0);
 			vdwrite(disk_fd, buffer, blocks1[i], DSKINF.blksz);
-			
 			temp -= size;
 		}
-
+		
 		level = level->next;
 		temp_block = blocks1;
 		blocks1 = blocks2;
-		blocks2 = blocks1;
-		data = level->next;
+		blocks2 = temp_block;
+		data = data->next;
 
 	}
 
-	int status, p;
-	unsigned int blk; 
-	unsigned int loc_in_blk;
-	int disk_fd;
-	unsigned int bytes_to_write;
-	char *chptr = NULL;
-	int temp, i, j, k, x, u;
-	int filedata_blocks_ints;
-
-	
-	// get required empty blocks
-	// get a location to store metadata
-	// failure to get metadata means, disk is full or doesnt have enough space to store metadata
-	// in any case of failure return
-	status = get_emtmtdblk_loc(disk_fd, &blk, &loc_in_blk);
-	if(status == -1)
-		return -1;
-
-
-	// just a variant to be used in loop
-	filedata_blocks_ints = filedata_blocks;
-	k = blocksdata_blocks;
-
-
-	
-	printf("blsk re%u\n", total_blocks_required);
-	u = 0;
-	// write actual file data 
 	while(u < filedata_blocks){
 
 		
@@ -286,7 +275,7 @@ int insert_file(char *usrflnm, DISKINFO DSKINF){
 
 	//for all the blocks that have been written, set the value of bits representing those blocks to occupied 
 	setbits(blocks, total_blocks_required, 0); // zero represents occoupied
-
+*/
 	//close disk
 	close(disk_fd);
 	return 0;

@@ -36,12 +36,12 @@ int main(int argc, char *argv[]){
     free(flags);
     FL_METADATA *mtdarr = malloc(DSKINF.ttlmtdta_blks *sizeof(FL_METADATA));
     read(fd, mtdarr, sizeof(FL_METADATA) * DSKINF.ttlmtdta_blks);
-
+/*
     for(int j = 0; j<DSKINF.ttlmtdta_blks; j++){
         printf("filename : %s\n", mtdarr[j].flnm);
         printf("strloc : %d\n", mtdarr[j].strtloc);
         printf("filesize : %d\n", mtdarr[j].flsz);
         printf("isavailable : %d\n", mtdarr[j].isavailable);
-    }      
+    }*/      
  return 0;
 }

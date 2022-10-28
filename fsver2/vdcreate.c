@@ -53,25 +53,24 @@ int create_metadata_blocks(int fd, DISKINFO DSKINF){
 
    strcpy(flmtd.flnm, "");
    flmtd.strtloc = 0;
-	flmtd.flsz = 0;
-	flmtd.isavailable = 1;
+   flmtd.flsz = 0;
+   flmtd.isavailable = 1;
 
    memset(new_buffer, '\0', DSKINF.blksz);
 
    for(i = 0; i<ttl_mtdblks_in_dskblk; i++){
       write_to_buffer(new_buffer, (char *)&flmtd, sizeof(FL_METADATA), sizeof(FL_METADATA)*i);
    }
-  
+
    start = DSKINF.mtdta_blk_ofst;
-   
+
    for(i = start; i<DSKINF.dsk_blk_for_mtdata+start ; i++){
       vdwrite(fd, new_buffer, i, DSKINF.blksz);
    }
- 
+
    free(new_buffer);
-
    return 0;
-
+   
 }
 
 
@@ -129,9 +128,9 @@ int main(int argc, char *argv[]){
    memset(buffer, 0, DSKINF.blksz);
    write_to_buffer(buffer, (char *)&DSKINF, sizeof(DSKINF), 0);
    vdwrite(fd, buffer, 0, DSKINF.blksz);
+   
    free(DSKINF.diskname);
    free(buffer);
-
    
    flags = malloc(sizeof(unsigned long int) * DSKINF.flags_arrsz);
    memset(flags, 0xFF, DSKINF.flags_arrsz*VDQUAD);
@@ -146,17 +145,13 @@ int main(int argc, char *argv[]){
 
    setbits(preoccupied_blocks_list, preoccupied_blocks, 0, flags);
    free(preoccupied_blocks_list);
- 
-   write_flags_todisk(flags, DSKINF);;
+
+   write_flags_todisk(fd, flags, DSKINF);
    free(flags);
    
    create_metadata_blocks(fd, DSKINF);
    
-
    write(1, "Disk creation successfull\n", 26);
- 
    close(fd);
-   
-
    return 0;
 }
