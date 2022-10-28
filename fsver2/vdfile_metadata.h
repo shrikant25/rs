@@ -4,8 +4,8 @@
 #ifndef _FL_METADATA
 #define _FL_METADATA
 typedef struct FL_METADATA{
-	char flnm[52];
 	unsigned int strtloc;
+	char flnm[52];
 	unsigned int flsz;
 	unsigned int isavailable;
 }FL_METADATA;

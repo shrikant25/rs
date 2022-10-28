@@ -16,18 +16,25 @@ int main(int argc, char *argv[]){
 
     read(fd, &DSKINF, sizeof(DSKINF));
        
-    unsigned int bytes_to_read = DSKINF.dsksz/(DSKINF.blksz*64); 
-    printf("%ld\n", lseek(fd,  DSKINF.blksz, SEEK_SET));
+   printf("blksz %ld\n", DSKINF.blksz);
+   printf("blcknt %ld\n", DSKINF.blkcnt);
+   printf("flags arrasz %d\n", DSKINF.flags_arrsz);
+   printf("flagsblkcnt %d\n", DSKINF.flgblkcnt);
+   printf("ttlmtdta_blks %d\n", DSKINF.ttlmtdta_blks);
+   printf(" DSKINF.dsk_blk_for_mtdata %d\n",  DSKINF.dsk_blk_for_mtdata);
+   printf(" DSKINF.mtdta_blk_ofst %d\n",  DSKINF.mtdta_blk_ofst);
+   printf("flag blocks count : %d\n", DSKINF.flgblkcnt);
+   printf("total metadata blocks  %u\n", DSKINF.ttlmtdta_blks);
+   printf("dsk blocks required for metadata blocks %d\n", DSKINF.ttlmtdta_blks);
 
-    unsigned long int *buffer = malloc(bytes_to_read * sizeof(unsigned long int));
-    read(fd, buffer, sizeof(unsigned long int)* bytes_to_read);
+    unsigned long int *flags = malloc(sizeof(unsigned long int)  * (DSKINF.flags_arrsz));
+    read(fd, flags, sizeof(unsigned long int) *(DSKINF.flags_arrsz));
     
-    printf("bytes to read %d\n", bytes_to_read);
-    for(int i = 0; i<bytes_to_read; i++){
-   		printf("\nflag is %d %lx\n", i, buffer[i]);
+    for(int i = 0; i < DSKINF.flags_arrsz;i++){
+        printf(" %d %lx\n", i , flags[i]);
     }
-
-    FL_METADATA mtdarr[DSKINF.ttlmtdta_blks];
+    free(flags);
+    FL_METADATA *mtdarr = malloc(DSKINF.ttlmtdta_blks *sizeof(FL_METADATA));
     read(fd, mtdarr, sizeof(FL_METADATA) * DSKINF.ttlmtdta_blks);
 
     for(int j = 0; j<DSKINF.ttlmtdta_blks; j++){

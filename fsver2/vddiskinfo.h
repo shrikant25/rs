@@ -4,7 +4,7 @@
 #ifndef _DISKINFO
 #define _DISKINFO
 typedef struct DISKINFO{
-	const char * diskname;
+	char * diskname;
 	unsigned int ttlmtdta_blks;
 	unsigned int mtdta_blk_ofst;
 	unsigned long int dsksz;
@@ -14,11 +14,6 @@ typedef struct DISKINFO{
     unsigned int flags_arrsz;
     unsigned int dsk_blk_for_mtdata;
 }DISKINFO;
-#endif
-
-#ifndef _DSKINF
-#define _DSKINF
-extern DISKINFO DSKINF;
 #endif
 
 #endif

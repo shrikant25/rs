@@ -5,7 +5,7 @@ void write_to_buffer(char *buffer, char *val, unsigned int num_of_bytes, unsigne
     unsigned int j = 0;
 
     while(j<num_of_bytes){
-        buffer[i++] = *val++;
+        buffer[i++] = val[j];
         j++;
     }
 }

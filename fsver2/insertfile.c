@@ -170,12 +170,13 @@ int insert_file(char *usrflnm, DISKINFO DSKINF){
 	int disk_fd;
 	char *buffer = malloc(sizeof(char) * DSKINF.blksz);
 	int i = 0;
+	DATA_LEVEL *level;
 	if(usrfl_fd == -1) return -1;
 	printf("beyound\n");
 
 	// get userfile size
 	unsigned long int usrflsz = lseek(usrfl_fd, 0, SEEK_END);
-	lseek(usrfl_fd, 0, SEEK_SET);
+	lseed(usrfl_fd, 0, SEEK_SET);
 
 	// count how many  blocks will be required for file data to be stored
 	unsigned int filedata_blocks = ceil((float)usrflsz/(float)DSKINF.blksz);
@@ -194,7 +195,7 @@ int insert_file(char *usrflnm, DISKINFO DSKINF){
 
 	blocks1 = malloc(sizeof(int) * block_int_capacity);
 	blocks2 = malloc(sizeof(int) * block_int_capacity);
-	DATA_LEVEL *level = head;
+	level = head;
 	getempty_blocks(level->block_cnt, blocks1);
 	int beg_loc = blocks1[0];
 	DATA_LEVEL *data = head->next;
