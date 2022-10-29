@@ -48,7 +48,7 @@ int create_metadata_blocks(int fd, DISKINFO DSKINF){
    unsigned int i;
    unsigned int start = 0;
    char *new_buffer = malloc(sizeof(char) * DSKINF.blksz);
-   unsigned int ttl_mtdblks_in_dskblk = sizeof(FL_METADATA)/DSKINF.blksz;
+   unsigned int ttl_mtdblks_in_dskblk = DSKINF.blksz/sizeof(FL_METADATA);
    FL_METADATA flmtd;
 
    strcpy(flmtd.flnm, "");
@@ -63,7 +63,7 @@ int create_metadata_blocks(int fd, DISKINFO DSKINF){
    }
 
    start = DSKINF.mtdta_blk_ofst;
-
+   printf("theeeeeeeeeeeee statt %d\n", start);
    for(i = start; i<DSKINF.dsk_blk_for_mtdata+start ; i++){
       vdwrite(fd, new_buffer, i, DSKINF.blksz);
    }

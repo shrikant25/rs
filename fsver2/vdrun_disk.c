@@ -16,12 +16,13 @@
 void readflags(int fd, unsigned long int *flags, DISKINFO DSKINF){
 	
 	int j = 0;
-	int i = 1;
+	int i = 0;
 	int dataread = 0;
 	unsigned long *ptr;
 	char *buffer = malloc(DSKINF.blkcnt);
 	int total_data = DSKINF.flags_arrsz * VDQUAD;
 
+	i = 1;
 	while(total_data > 0){
 	
 		dataread = vdread(fd, buffer, i, DSKINF.blksz);
@@ -55,7 +56,7 @@ int main(int argc, char *argv[]){
 	FR_FLGBLK_LST FFLST;
 	FFLST.frblkcnt = 0;
 	FFLST.head = NULL;
-	fd = open(argv[1], O_RDONLY);
+	fd = open(argv[1], O_RDONLY, 00777);
 	
 	if(fd){
 	
@@ -86,18 +87,21 @@ int main(int argc, char *argv[]){
 		
 		int filestatus = insert_file(fd, "b.txt", DSKINF, flags, &FFLST);
 
-	/*	if(filestatus == -1){
-			perror("Failed to write file to disk");
+		if(filestatus != 0){
+			printf("filestatus %d\n", filestatus);
+			//perror("Failed to write file to disk");
 			exit(EXIT_FAILURE);
 		}
-		else{   // update flag values inside the disk
-			if(write_flags_todisk(flags, DSKINF) == -1){
+		else{   
+			printf("agdain");// update flag values inside the disk
+			if(write_flags_todisk(fd, flags, DSKINF) == -1){
 				perror("Failed to write flags\n");
 				exit(EXIT_FAILURE);
 			}
 		}
-	*/	
-		//write_flags_todisk(fd flags, DSKINF); // readsize = flag data size		
+		
+		for(int y =0; y<65536; y++)
+			printf("%d %lx\n", y,flags[y]);	
 		free(buffer);
 		free(flags);
 		close(fd);
