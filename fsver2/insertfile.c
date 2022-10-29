@@ -93,6 +93,8 @@ int insert( int usrfl_fd, int fd, DISKINFO DSKINF,
 			size = val > block_int_capacity ? block_int_capacity : val;
 			getempty_blocks(size, blocks, FFLST);
 			setbits(blocks, size, 0, flags);
+			build(DSKINF, flags, FFLST);
+
 			if(parent_block > 0){
 				memset(buffer, 0, DSKINF.blksz);
 				write_to_buffer(buffer, blocks, DSKINF.blksz, 0);
