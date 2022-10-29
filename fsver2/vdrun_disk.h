@@ -33,7 +33,7 @@ void build(DISKINFO, unsigned long int *, FR_FLGBLK_LST *);
 
 #ifndef _INSERT_FILE
 #define _INSERT_FILE
-int insert_file(char *, DISKINFO, unsigned long int *, FR_FLGBLK_LST *);
+int insert_file(int , char *, DISKINFO, unsigned long int *, FR_FLGBLK_LST *);
 #endif
 
 #endif

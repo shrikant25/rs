@@ -1,5 +1,5 @@
-#ifndef _VDHEADER_H
-#define _VDHEADER_H
+#ifndef _FL_MTD_HEADER_H
+#define _FL_MTD_HEADER_H
 
 #ifndef _FL_METADATA
 #define _FL_METADATA

@@ -10,82 +10,45 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-/*
-int get_emtmtdblk_loc(int fd, unsigned int *blk, unsigned int *loc_in_blk){
 
-	unsigned int i,j;	
-	unsigned int mtdata_blocks = DSKINF.blksz/sizeof(FL_METADATA);
-	unsigned int curblock = (DSKINF.dsksz/DSKINF.blksz)-1;
-	FL_METADATA *flmtptr = NULL;
+int get_emtmtdblk_loc(int fd, DISKINFO DSKINF, unsigned int *dskblk_ofmtd, unsigned int *loc_ofmtd_in_blk){
+ 
+	int i, j;
+	unsigned int ttl_mtdblks_in_dskblk = sizeof(FL_METADATA)/DSKINF.blksz;
+	FL_METADATA *flmtdptr;
 	
-	// if there is no metadata in disk, then just add the metadata at last block
-	if(DSKINF.ttlmetadata_blks == 0){
-		// before taking value of curblock check wether its bit is set or not
-		if(checkbits(curblock)){
-			*blk = curblock;
-			*loc_in_blk = 0;
-			return 0;
-		}
-		return -1;
-	}
+	char *buffer = malloc(sizeof(char) * DSKINF.blksz);
+	lseek(fd, DSKINF.mtdta_blk_ofst*DSKINF.blksz, SEEK_SET);
+	
+	i = 0;
+	while(i<DSKINF.ttlmtdta_blks){
 
-	i = 1;
-	j = 0;
-	// if there is metadata already available in disk, 
-	// then try to find a spot for new metadata
-	// just search for a spot which was previously occupied
-	// but now its free
-	while(i<=DSKINF.ttlmetadata_blks){ // loop untill all blocks 
-
-		memset(buffer, '\0', DSKINF.blksz);
-		vdread(fd, buffer, curblock, DSKINF.blksz);
-		flmtptr = (FL_METADATA *)buffer;
-
-		while(j<mtdata_blocks && i<=DSKINF.ttlmetadata_blks){
-			if(!flmtptr->isavailable){	
-				*blk = curblock;
-				*loc_in_blk = j;
+		memset(buffer, 0, DSKINF.blksz);	
+		vdread(fd, buffer, DSKINF.mtdta_blk_ofst + i, DSKINF.blksz);
+		flmtdptr = (FL_METADATA *)buffer;
+		
+		for(j = 0; j<ttl_mtdblks_in_dskblk; j++){
+			if(flmtdptr->isavailable){
+				*dskblk_ofmtd = DSKINF.mtdta_blk_ofst + i;
+				*loc_ofmtd_in_blk = j;
 				return 0;
 			}
-			j++;
-			i++;
+			flmtdptr++;
 		}
+
+		i++;
+	} 
 	
-	// if current disk block is read then just go back one block 
-		if(j>=mtdata_blocks){
-				curblock--;		
-				j = 0;
-		}
-			
-	}
-
-	// if all metadata block are read and
-	// none of the previously used block is available
-	// then just get a new pos
-
-	if(i > DSKINF.ttlmetadata_blks){
-		// is new fileblock and j = 0
-		// it means the block doesnt have any metadata
-		// which means it might be used for some other purpose
-		// so need to check wether it is free or not
-		if(j==0 && (!checkbits(curblock)))
-			return -1;	
-		
-		*blk = curblock;
-		*loc_in_blk = j;
-		
-		return 0;
-	}
-
 	return -1;
 }
 
 
-int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int flbegloc, int disk_fd, unsigned int blk, unsigned int loc_in_blk){
+int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int flbegblock, int disk_fd, DISKINFO DSKINF){
 	
 	// structure variable to store filematadat
 	FL_METADATA flmtd;
 
+	char *buffer = malloc(sizeof(char) *DSKINF.blksz);
 	char *chptr = NULL;
 	int i = 1;
 	int j = 0;
@@ -138,146 +101,86 @@ int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int flbegloc, i
 	return 0;
 }
 */
-typedef struct DATA_LEVEL{
-	unsigned int block_cnt;
-	struct DATA_LEVEL *next;
-}DATA_LEVEL;
-
-DATA_LEVEL * new_val_node(unsigned int val){
-	DATA_LEVEL *new = malloc(sizeof(DATA_LEVEL));
-	new->next = NULL;
-	new->block_cnt = val;
-	return new;
-}
-
-void insert_val(unsigned int val, DATA_LEVEL **head){
-	DATA_LEVEL *new = new_val_node(val);
-	new->next = *head;
-	*head = new;
-	printf("insertign val %d\n", val); 
-}
 
 
-int insert_file(char *usrflnm, DISKINFO DSKINF, unsigned long int *flags, FR_FLGBLK_LST *FFLST){
-	
-	printf("in function\n");
-	// open user file
-	// return if failed found
-  //int usrfl_fd = open(usrflnm, O_RDONLY, 00777);
-  //if(usrfl_fd == -1) return -1;
-	unsigned long int usrflsz = 1 * 1024 * 1024;//lseek(usrfl_fd, 0, SEEK_END);
+int insert( int usrfl_fd, int fd, DISKINFO DSKINF, 
+			unsigned int *level, unsigned int depth, 
+		    unsigned int block_int_capacity, FR_FLGBLK_LST *FFLST,  
+		    unsigned int parent_block){
 
-	// get empty metadata block 
-	// if found then , else return -1
-	// check wether disk has enough size
-		// else retu 
-	// metadataloc = get_emtmtdblk_loc();
-	// if metadataloc > 0
-	// 
-	//		if(usrflsz > (FFLST->frblkcnt*DSKINF.blksz)){
-	//			return -2;
-	//	else
-	//		return -1
+		int i, j, size;
+		int val = level[depth];
+		unsigned int *blocks = malloc(sizeof(int) * block_int_capacity);
+		char *buffer = malloc(sizeof(char) * DSKINF.blksz);
 
-	unsigned int val = 0;
-	unsigned int size;
-	unsigned int *blocks1 = NULL;
-	unsigned int *blocks2 = NULL;
-	unsigned int *temp_block = NULL;
-	int disk_fd;
-	char *buffer = malloc(sizeof(char) * DSKINF.blksz);
-	int i = 0;
-	DATA_LEVEL *level;
-
-	// get userfile size
-	//lseek(usrfl_fd, 0, SEEK_SET);
-
-	// count how many  blocks will be required for file data to be stored
-	unsigned int filedata_blocks = ceil((float)usrflsz/(float)DSKINF.blksz);
-
-	// count how many intergers can be stored in one block 
-	// here integer represents the block number of each block used to store the data of file
-	unsigned int block_int_capacity = (DSKINF.blksz/sizeof(int));
-	val = filedata_blocks;
-	DATA_LEVEL *head;
-	insert_val(filedata_blocks, &head);
-
-	while(val != 1){
-		val = ceil((float)val/(float)block_int_capacity);
-		insert_val(val, &head);
-	}
-
-	blocks1 = malloc(sizeof(int) * block_int_capacity);
-	blocks2 = malloc(sizeof(int) * block_int_capacity);
-	level = head;
-	getempty_blocks(level->block_cnt, blocks1, FFLST);
-	setbits(blocks1, level->block_cnt, 0, flags);
-	build(DSKINF, flags, FFLST);
-	int beg_loc = blocks1[0];
-	DATA_LEVEL *data = head->next;
-		 
-	//open disk, return if failed 
-//	disk_fd = open(DSKINF.diskname, O_RDWR);
-//	if(disk_fd == -1) return -1;
-
-	while(data != NULL){
-
-		int temp = data->block_cnt;
-		size = 0;
-
-		for(i = 0; i<level->block_cnt; i++){
-
-			size = temp > block_int_capacity ? block_int_capacity : temp;
-			getempty_blocks(size, blocks2, FFLST);
-			setbits(blocks2, size, 0, flags);
-			build(DSKINF, flags, FFLST);
+		for(i = 0; i<level[depth]; i++){
 			
-			memset(buffer, 0, DSKINF.blksz);
-			write_to_buffer(buffer, (char *)blocks2, size*VDDOUBLE_WORD, 0);
-			vdwrite(disk_fd, buffer, blocks1[i], DSKINF.blksz);
-			temp -= size;
-		}
-		
-		level = level->next;
-		temp_block = blocks1;
-		blocks1 = blocks2;
-		blocks2 = temp_block;
-		data = data->next;
-
-	}
-
-	while(u < filedata_blocks){
-
-		
-		memset(buffer, '\0', DSKINF.blksz);
-		// read the data from userfile (size of data to be read = size of block in disk)
-		read(usrfl_fd, buffer, DSKINF.blksz); 
-		
-		// write data to disk at ith block
-		vdwrite(disk_fd, buffer, blocks[i], DSKINF.blksz);
-		printf("writing at blockl %d\n", blocks[i]);
-		
-		i++; // increment to get next block
-		u++; // keeps track of data blocks that have been written
-		printf("u is %d iledata_blocks %d\n", u, filedata_blocks);
-	}
+			size = val > block_int_capacity ? block_int_capacity : val;
+			getempty_blocks(size, blocks, FFLST);
+			
+			if(parent_block > 0){
+				memset(buffer, 0, DSKINF.blksz);
+				write_to_buffer(buffer, blocks, DSKINF.blksz, 0);
+				vdwrite(fd, buffer, parent_block, DSKINF.blksz);
+			}
+			
+			for(j = 0; j<size; j++){
 				
-	//close userfile 
-	close(usrfl_fd);	
-	printf("astal la vista baby");
+				level[depth]--;			
 
-	// write metadata
-	// the function accetps userfile name, userfile size, value of first block storing the integers
-	// file descriptor for disk, pointer to variable that can store the block number where metadata will be written
-	// and pointer to a variable that will store the location inside the block where metadata will be written
-	write_metadata(usrflnm, usrflsz, blocks[0], disk_fd, blk, loc_in_blk);
-	printf("bruhhh\n");
+				if(depth == 0){ 
+					memset(buffer, 0, DSKINF.blksz);
+					read(usrfl_fd, buffer, DSKINF.blksz);
+					vdwrite(usrfl_fd, buffer, blocks[j], DSKINF.blksz);
+				}else{
+					depth--;	
+					insert(usrfl_fd, fd, DSKINF, level, depth, blocks[j], block_int_capacity, FFLST);
+				}
+			}
+			
+			val -= size;
+		}
 
-	//for all the blocks that have been written, set the value of bits representing those blocks to occupied 
-	setbits(blocks, total_blocks_required, 0); // zero represents occoupied
-*/
-	//close disk
-	close(disk_fd);
+		free(blocks);
+		free(buffer);
+}
+
+
+int insert_file(int disk_fd, char *usrflnm, DISKINFO DSKINF, unsigned long int *flags, FR_FLGBLK_LST *FFLST){
+	
+	int usrfl_fd = opne(usrflnm, O_RDONLY, 00777);
+	if (usrfl_fd == -1) return -1;
+
+	unsigned long int usrflsz = lseek(usrfl_fd, 0, SEEK_END);
+	int i = 0;
+	int level_size[5];
+	unsigned int filedata_blocks = ceil((float)usrflsz/(float)DSKINF.blksz);
+	unsigned int block_int_capacity = (DSKINF.blksz/sizeof(int));
+	int tree_depth = 0;
+	int temp = filedata_blocks;
+	unsigned int dskblk_ofmtd; 
+	unsigned int loc_ofmtd_in_blk;
+	
+	lseek(usrfl_fd, 0, SEEK_SET);
+
+	if(get_emtmtdblk_loc(disk_fd, DSKINF, &dskblk_ofmtd, &loc_ofmtd_in_blk) == -1)
+		return -1;
+	
+	if(usrflsz > (FFLST->frblkcnt*DSKINF.blksz)){
+		return -2;
+	
+	level_size[i++] = temp;
+
+	do{
+		temp = ceil((float)temp/(float)block_int_capacity);
+		level_size[i++] = temp;
+	}while(temp != 1);
+
+	insert(usrfl_fd, disk_fd, DSKINF, level_size, tree_depth, 0, block_int_capacity, FFLST);
+
+	//write_metadata(usrflnm, usrflsz, blocks[0], dsk_fd, blk, loc_in_blk);
+
+	close(usrfl_fd);
 	return 0;
 }
 

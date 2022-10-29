@@ -84,7 +84,7 @@ int main(int argc, char *argv[]){
 		printf("total empty  blocks %d\n", FFLST.head->cnt);
 		printf("total empty  bytes %ld\n", (FFLST.head->cnt)*DSKINF.blksz);
 		
-		int filestatus = insert_file("b.txt", DSKINF, flags, &FFLST);
+		int filestatus = insert_file(fd, "b.txt", DSKINF, flags, &FFLST);
 
 	/*	if(filestatus == -1){
 			perror("Failed to write file to disk");
