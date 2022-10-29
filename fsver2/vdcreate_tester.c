@@ -28,7 +28,7 @@ int main(int argc, char *argv[]){
    printf("dsk blocks required for metadata blocks %d\n", DSKINF.ttlmtdta_blks);
 
     unsigned long int *flags = malloc(sizeof(unsigned long int)  * (DSKINF.flags_arrsz));
-    lseek(fd, DSKINF.blksz-1, SEEK_SET);
+    lseek(fd, DSKINF.blksz, SEEK_SET);
     read(fd, flags, sizeof(unsigned long int) *(DSKINF.flags_arrsz));
     
     for(int i = 0; i < DSKINF.flags_arrsz;i++){

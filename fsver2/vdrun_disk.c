@@ -99,9 +99,7 @@ int main(int argc, char *argv[]){
 				exit(EXIT_FAILURE);
 			}
 		}
-		
-		for(int y =0; y<65536; y++)
-			printf("%d %lx\n", y,flags[y]);	
+			
 		free(buffer);
 		free(flags);
 		close(fd);
