@@ -80,7 +80,7 @@ int write_metadata( char *usrflnm, unsigned int usrflsz,
 int insert( int usrfl_fd, int fd, DISKINFO DSKINF, 
 			unsigned int *level, unsigned int depth, 
 		    unsigned int block_int_capacity, FR_FLGBLK_LST *FFLST,  
-		    unsigned int parent_block){
+		    unsigned int parent_block, unsigned long int *flags){
 
 		int i, j, size;
 		int root_block = 0;
@@ -92,7 +92,7 @@ int insert( int usrfl_fd, int fd, DISKINFO DSKINF,
 			
 			size = val > block_int_capacity ? block_int_capacity : val;
 			getempty_blocks(size, blocks, FFLST);
-			
+			setbits(blocks, size, 0, flags);
 			if(parent_block > 0){
 				memset(buffer, 0, DSKINF.blksz);
 				write_to_buffer(buffer, blocks, DSKINF.blksz, 0);
@@ -109,7 +109,7 @@ int insert( int usrfl_fd, int fd, DISKINFO DSKINF,
 					vdwrite(usrfl_fd, buffer, blocks[j], DSKINF.blksz);
 				}else{
 					depth--;	
-					insert(usrfl_fd, fd, DSKINF, level, depth, blocks[j], block_int_capacity, FFLST);
+					insert(usrfl_fd, fd, DSKINF, level, depth, blocks[j], block_int_capacity, FFLST, flags);
 				}
 			}
 			
@@ -129,6 +129,7 @@ int insert_file(int disk_fd, char *usrflnm, DISKINFO DSKINF, unsigned long int *
 	if (usrfl_fd == -1) return -1;
 
 	unsigned long int usrflsz = lseek(usrfl_fd, 0, SEEK_END);
+	lseek(usrfl_fd, 0, SEEK_SET);
 	int i = 0;
 	int level_size[5];
 	unsigned int filedata_blocks = ceil((float)usrflsz/(float)DSKINF.blksz);
@@ -139,7 +140,6 @@ int insert_file(int disk_fd, char *usrflnm, DISKINFO DSKINF, unsigned long int *
 	unsigned int dskblk_ofmtd; 
 	unsigned int loc_ofmtd_in_blk;
 	
-	lseek(usrfl_fd, 0, SEEK_SET);
 
 	if(get_emtmtdblk_loc(disk_fd, DSKINF, &dskblk_ofmtd, &loc_ofmtd_in_blk) == -1)
 		return -1;
@@ -154,7 +154,7 @@ int insert_file(int disk_fd, char *usrflnm, DISKINFO DSKINF, unsigned long int *
 		level_size[i++] = temp;
 	}while(temp != 1);
 
-	filebegblk = insert(usrfl_fd, disk_fd, DSKINF, level_size, tree_depth, 0, block_int_capacity, FFLST);
+	filebegblk = insert(usrfl_fd, disk_fd, DSKINF, level_size, tree_depth, 0, block_int_capacity, FFLST, flags);
 
 	write_metadata(usrflnm, usrflsz, filebegblk, disk_fd, dskblk_ofmtd, loc_ofmtd_in_blk, DSKINF);
 
