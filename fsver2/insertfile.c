@@ -42,9 +42,11 @@ int get_emtmtdblk_loc(int fd, DISKINFO DSKINF, unsigned int *dskblk_ofmtd, unsig
 	return -1;
 }
 
+int write_metadata( char *usrflnm, unsigned int usrflsz, 
+					unsigned int  flbegbloc, int disk_fd, 
+					unsigned int dskblk_ofmtd, unsigned int loc_ofmtd_in_blk,
+					DISKINFO DSKINF){
 
-int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int flbegblock, int disk_fd, DISKINFO DSKINF){
-	
 	// structure variable to store filematadat
 	FL_METADATA flmtd;
 
@@ -54,53 +56,25 @@ int write_metadata(char *usrflnm, unsigned int usrflsz, unsigned int flbegblock,
 	int j = 0;
 
 	memset(buffer, '\0', DSKINF.blksz);
-	vdread(disk_fd, buffer, blk, DSKINF.blksz);
+	vdread(disk_fd, buffer, dskblk_ofmtd, DSKINF.blksz);
 	//store filename in structure variable 
 	strcpy(flmtd.flnm, usrflnm);
-	// set the metadata block as available
-	// when the block is set as available 
-	// it is considered as a valid block
-	// if it is set to unavailable 
-	// then it can be used to store data of some other file
-	flmtd.strtloc = flbegloc;
+	flmtd.strtloc = flbegbloc;
 	flmtd.flsz = usrflsz;
+	flmtd.isavailable = 0;
 
 	//store bytes of structure variable in buffer at given location
 	chptr = (char *)&flmtd;
 	for(i = 0; i < sizeof(FL_METADATA); i++){
-		buffer[loc_in_blk] = *chptr++;
+		buffer[loc_ofmtd_in_blk] = *chptr++;
 	}
 
 	// write metadata to disk
-	vdwrite(disk_fd, buffer, blk, DSKINF.blksz);
-	// set the bits as occupied for the block where metadata is written  
-	setbits(blk, 1, 0);
-
-	printf("filstatr loc %u\n", flmtd.strtloc);
-	printf("filsz %u\n", flmtd.flsz);
-	// increase the count of total metadatablocks that have been sotred
-	DSKINF.ttlmetadata_blks += 1;
-
-	memset(buffer, '\0', DSKINF.blksz);
-	// read zeroth block
-	vdread(disk_fd, buffer, 0, DSKINF.blksz);
-
-	// write every byte of metadata to buffer at appopriate place
-	chptr = (char *)&DSKINF.ttlmetadata_blks;
-	printf("size is %d\n", buffer[0]);
-	printf("size is %d\n", buffer[1]);
-	buffer[2] = *chptr++;
-	buffer[3] = *chptr++;
-	buffer[4] = *chptr++;
-	buffer[5] = *chptr;
-
-	// write buffer to disk
-	vdwrite(disk_fd, buffer, 0, DSKINF.blksz);
-	printf("total metadata blocks in the end %d\n", DSKINF.ttlmetadata_blks);
-
+	vdwrite(disk_fd, buffer, dskblk_ofmtd, DSKINF.blksz);
+	
 	return 0;
 }
-*/
+
 
 
 int insert( int usrfl_fd, int fd, DISKINFO DSKINF, 
@@ -109,6 +83,7 @@ int insert( int usrfl_fd, int fd, DISKINFO DSKINF,
 		    unsigned int parent_block){
 
 		int i, j, size;
+		int root_block = 0;
 		int val = level[depth];
 		unsigned int *blocks = malloc(sizeof(int) * block_int_capacity);
 		char *buffer = malloc(sizeof(char) * DSKINF.blksz);
@@ -141,8 +116,10 @@ int insert( int usrfl_fd, int fd, DISKINFO DSKINF,
 			val -= size;
 		}
 
+		root_block = blocks[0];
 		free(blocks);
 		free(buffer);
+		return root_block;
 }
 
 
@@ -156,6 +133,7 @@ int insert_file(int disk_fd, char *usrflnm, DISKINFO DSKINF, unsigned long int *
 	int level_size[5];
 	unsigned int filedata_blocks = ceil((float)usrflsz/(float)DSKINF.blksz);
 	unsigned int block_int_capacity = (DSKINF.blksz/sizeof(int));
+	int filebegblk = 0;
 	int tree_depth = 0;
 	int temp = filedata_blocks;
 	unsigned int dskblk_ofmtd; 
@@ -176,9 +154,9 @@ int insert_file(int disk_fd, char *usrflnm, DISKINFO DSKINF, unsigned long int *
 		level_size[i++] = temp;
 	}while(temp != 1);
 
-	insert(usrfl_fd, disk_fd, DSKINF, level_size, tree_depth, 0, block_int_capacity, FFLST);
+	filebegblk = insert(usrfl_fd, disk_fd, DSKINF, level_size, tree_depth, 0, block_int_capacity, FFLST);
 
-	//write_metadata(usrflnm, usrflsz, blocks[0], dsk_fd, blk, loc_in_blk);
+	write_metadata(usrflnm, usrflsz, filebegblk, disk_fd, dskblk_ofmtd, loc_ofmtd_in_blk, DSKINF);
 
 	close(usrfl_fd);
 	return 0;
