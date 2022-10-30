@@ -116,7 +116,7 @@ int insert( int usrfl_fd, int fd, DISKINFO DSKINF,
 				if(depth == 0){ 
 					memset(buffer, 0, DSKINF.blksz);
 					read(usrfl_fd, buffer, DSKINF.blksz);
-					vdwrite(usrfl_fd, buffer, blocks[j], DSKINF.blksz);
+					vdwrite(fd, buffer, blocks[j], DSKINF.blksz);
 				}else{
 					depth--;	
 					insert(usrfl_fd, fd, DSKINF, level, depth, block_int_capacity, FFLST, blocks[j],flags);
@@ -140,30 +140,32 @@ int insert_file(int disk_fd, char *usrflnm, DISKINFO DSKINF, unsigned long int *
 
 	unsigned long int usrflsz = lseek(usrfl_fd, 0, SEEK_END);
 	lseek(usrfl_fd, 0, SEEK_SET);
+	
 	int i = 0;
-	int level_size[5];
-	unsigned int filedata_blocks = ceil((float)usrflsz/(float)DSKINF.blksz);
-	unsigned int block_int_capacity = (DSKINF.blksz/sizeof(int));
 	int filebegblk = 0;
 	int tree_depth = 0;
-	int temp = filedata_blocks;
 	unsigned int dskblk_ofmtd; 
 	unsigned int loc_ofmtd_in_blk;
+	unsigned int block_int_capacity = (DSKINF.blksz/sizeof(int));
 	
-
+	int level_size[5];
+	unsigned int filedata_blocks = ceil((float)usrflsz/(float)DSKINF.blksz);
+	int temp = filedata_blocks;
+	
 	if(get_emtmtdblk_loc(disk_fd, DSKINF, &dskblk_ofmtd, &loc_ofmtd_in_blk) == -1)
 		return -2;
 	
 	if(usrflsz > (FFLST->frblkcnt*DSKINF.blksz))
 		return -3;
 	
-	level_size[i++] = temp;
+	level_size[tree_depth] = temp;
 
 	do{
 		temp = ceil((float)temp/(float)block_int_capacity);
-		level_size[i++] = temp;
+		level_size[tree_depth] = temp;
 	}while(temp != 1);
 
+	tree_depth--;
 	filebegblk = insert(usrfl_fd, disk_fd, DSKINF, level_size, tree_depth, block_int_capacity, FFLST, 0, flags);
 
 	write_metadata(usrflnm, usrflsz, filebegblk, disk_fd, dskblk_ofmtd, loc_ofmtd_in_blk, DSKINF);

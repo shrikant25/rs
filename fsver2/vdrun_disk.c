@@ -56,58 +56,51 @@ int main(int argc, char *argv[]){
 	FR_FLGBLK_LST FFLST;
 	FFLST.frblkcnt = 0;
 	FFLST.head = NULL;
-	fd = open(argv[1], O_RDONLY, 00777);
+	fd = open(argv[1], O_RDWR, 00777);
+	if(fd == -1) return -1;
+
+	read(fd, &DSKINF, sizeof(DSKINF));
+	printf("blksz %ld\n", DSKINF.blksz);
+	printf("blcknt %ld\n", DSKINF.blkcnt);
+	printf("flags arrasz %d\n", DSKINF.flags_arrsz);
+	printf("flagsblkcnt %d\n", DSKINF.flgblkcnt);
+	printf("ttlmtdta_blks %d\n", DSKINF.ttlmtdta_blks);
+	printf(" DSKINF.dsk_blk_for_mtdata %d\n",  DSKINF.dsk_blk_for_mtdata);
+	printf(" DSKINF.mtdta_blk_ofst %d\n",  DSKINF.mtdta_blk_ofst);
+	printf("flag blocks count : %d\n", DSKINF.flgblkcnt);
+	printf("total metadata blocks  %u\n", DSKINF.ttlmtdta_blks);
+	printf("dsk blocks required for metadata blocks %d\n", DSKINF.ttlmtdta_blks);
+
+	buffer = malloc(DSKINF.blksz);	
+	flags = malloc(DSKINF.flags_arrsz * VDQUAD);
+	readflags(fd, flags, DSKINF);
 	
-	if(fd){
+	build(DSKINF, flags, &FFLST);		
 	
-		read(fd, &DSKINF, sizeof(DSKINF));
-		printf("blksz %ld\n", DSKINF.blksz);
-		printf("blcknt %ld\n", DSKINF.blkcnt);
-		printf("flags arrasz %d\n", DSKINF.flags_arrsz);
-		printf("flagsblkcnt %d\n", DSKINF.flgblkcnt);
-		printf("ttlmtdta_blks %d\n", DSKINF.ttlmtdta_blks);
-		printf(" DSKINF.dsk_blk_for_mtdata %d\n",  DSKINF.dsk_blk_for_mtdata);
-		printf(" DSKINF.mtdta_blk_ofst %d\n",  DSKINF.mtdta_blk_ofst);
-		printf("flag blocks count : %d\n", DSKINF.flgblkcnt);
-		printf("total metadata blocks  %u\n", DSKINF.ttlmtdta_blks);
-		printf("dsk blocks required for metadata blocks %d\n", DSKINF.ttlmtdta_blks);
+	printf("total blcks %d\n", FFLST.frblkcnt);
+	printf("largest available block is at %d\n", FFLST.head->loc);
+	printf("largest available block is at %ld\n", ((FFLST.head->loc)*DSKINF.blksz)+1);
+	printf("total empty  blocks %d\n", FFLST.head->cnt);
+	printf("total empty  bytes %ld\n", (FFLST.head->cnt)*DSKINF.blksz);
+	
+	int filestatus = insert_file(fd, "b.txt", DSKINF, flags, &FFLST);
 
-		buffer = malloc(DSKINF.blksz);	
-		flags = malloc(DSKINF.flags_arrsz * VDQUAD);
-		readflags(fd, flags, DSKINF);
-		
-
-		build(DSKINF, flags, &FFLST);		
-		
-		printf("total blcks %d\n", FFLST.frblkcnt);
-		printf("largest available block is at %d\n", FFLST.head->loc);
-		printf("largest available block is at %ld\n", ((FFLST.head->loc)*DSKINF.blksz)+1);
-		printf("total empty  blocks %d\n", FFLST.head->cnt);
-		printf("total empty  bytes %ld\n", (FFLST.head->cnt)*DSKINF.blksz);
-		
-		int filestatus = insert_file(fd, "b.txt", DSKINF, flags, &FFLST);
-
-		if(filestatus != 0){
-			printf("filestatus %d\n", filestatus);
-			//perror("Failed to write file to disk");
-			exit(EXIT_FAILURE);
-		}
-		else{   
-			printf("agdain");// update flag values inside the disk
-			if(write_flags_todisk(fd, flags, DSKINF) == -1){
-				perror("Failed to write flags\n");
-				exit(EXIT_FAILURE);
-			}
-		}
-			
-		free(buffer);
-		free(flags);
-		close(fd);
-	}
-	else{
-		perror("Failed to open file\n");
+	if(filestatus != 0){
+		printf("filestatus %d\n", filestatus);
+		//perror("Failed to write file to disk");
 		exit(EXIT_FAILURE);
 	}
+	else{   
+		printf("agdain");// update flag values inside the disk
+		if(write_flags_todisk(fd, flags, DSKINF) == -1){
+			perror("Failed to write flags\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+		
+	free(buffer);
+	free(flags);
+	close(fd);
 	
 	return 0;
 }
