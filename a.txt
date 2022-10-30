@@ -1,3 +1,0 @@
-artemis 1 \n to \n the \n mooooonnnnnnnnnn
-artemis 1 to '\n' the '\n' mooooonnnnnnnnnn
-artemis 1 to the  mooooonnnnnnnnnn
