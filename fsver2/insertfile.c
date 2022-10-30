@@ -11,115 +11,71 @@
 #include <stdlib.h>
 #include <math.h>
 
-int get_emtmtdblk_loc(int fd, DISKINFO DSKINF, unsigned int *dskblk_ofmtd, unsigned int *loc_ofmtd_in_blk){
- 
-	int i, j;
-	unsigned int ttl_mtdblks_in_dskblk = DSKINF.blksz/sizeof(FL_METADATA);
-	FL_METADATA *flmtdptr;
-	
-	char *buffer = malloc(sizeof(char) * DSKINF.blksz);
-	lseek(fd, DSKINF.mtdta_blk_ofst*DSKINF.blksz, SEEK_SET);
-	
-	i = 0;
-	while(i<DSKINF.ttlmtdta_blks){
-		printf("ehat");
-		memset(buffer, 0, DSKINF.blksz);	
-		vdread(fd, buffer, DSKINF.mtdta_blk_ofst + i, DSKINF.blksz);
-		flmtdptr = (FL_METADATA *)buffer;
-		
-		for(j = 0; j<ttl_mtdblks_in_dskblk; j++){
-			printf("baby");
-			if(flmtdptr->isavailable){
-				printf("harer");
-				*dskblk_ofmtd = DSKINF.mtdta_blk_ofst + i;
-				*loc_ofmtd_in_blk = j;
-				printf("j :%d\n", j);
-				free(buffer);
-				return 0;
-			}
-			flmtdptr++;
-		}
-
-		i++;
-	} 
-	free(buffer);
-	return -1;
-}
-
-int write_metadata( int usrfl_fd, unsigned int usrflsz, 
-					unsigned int  flbegbloc, int disk_fd, 
-					unsigned int dskblk_ofmtd, unsigned int loc_ofmtd_in_blk,
-					DISKINFO DSKINF){
+int write_metadata( FILE_ACTION_VARS *FAV,  unsigned int flbegbloc){
 
 	// structure variable to store filematadat
 	FL_METADATA flmtd;
 
-	char *buffer = malloc(sizeof(char) *DSKINF.blksz);
+	char *buffer = malloc(sizeof(char) * FAV->DSKINF.blksz);
 	char *chptr = NULL;
-	int i = 1;
-	int j = 0;
 
-	memset(buffer, '\0', DSKINF.blksz);
-	vdread(disk_fd, buffer, dskblk_ofmtd, DSKINF.blksz);
+	memset(buffer, '\0', FAV->DSKINF.blksz);
+	vdread(FAV->disk_fd, buffer, FAV->dskblk_ofmtd, FAV->DSKINF.blksz);
 	//store filename in structure variable 
-	strcpy(flmtd.flnm, usrflnm);
+	strcpy(flmtd.flnm, FAV->usrflnm);
 	flmtd.strtloc = flbegbloc;
-	flmtd.flsz = usrflsz;
+	flmtd.flsz = FAV->usrflsz;
 	flmtd.isavailable = 0;
 	printf("filenmae %s\n", flmtd.flnm);
 		printf("filenmae %s\n", flmtd.flnm);
 		printf(" %d\n", flmtd.flsz);
-		printf("%d\n", dskblk_ofmtd);
-		printf("%d\n", loc_ofmtd_in_blk);
+		printf("%d\n", FAV->dskblk_ofmtd);
+		printf("%d\n", FAV->loc_ofmtd_in_blk);
 	//store bytes of structure variable in buffer at given location
 	
-	write_to_buffer(buffer, (char *)&flmtd, sizeof(FL_METADATA), loc_ofmtd_in_blk);
+	write_to_buffer(buffer, (char *)&flmtd, sizeof(FL_METADATA), FAV->loc_ofmtd_in_blk);
 	
 	// write metadata to disk
-	vdwrite(disk_fd, buffer, dskblk_ofmtd, DSKINF.blksz);
+	vdwrite(FAV->disk_fd, buffer, FAV->dskblk_ofmtd, FAV->DSKINF.blksz);
 	
 	free(buffer);
 	return 0;
 }
 
-
-
-int insert( int usrfl_fd, int fd, DISKINFO DSKINF, 
-			unsigned int *level, unsigned int depth, 
-		    unsigned int block_int_capacity, FR_FLGBLK_LST *FFLST,  
-		    unsigned int parent_block, unsigned long int *flags){
+unsigned int insert( FILE_ACTION_VARS *FAV, unsigned int parent_block){
 
 		int i, j, size;
-		int root_block = 0;
-		int val = level[depth];
+		unsigned int root_block = 0;
+		int val = FAV->level_size[FAV->tree_depth];
+		unsigned int block_int_capacity = FAV->DSKINF.blksz/sizeof(int);
 		unsigned int *blocks = malloc(sizeof(int) * block_int_capacity);
-		char *buffer = malloc(sizeof(char) * DSKINF.blksz);
+		char *buffer = malloc(sizeof(char) * FAV->DSKINF.blksz);
 
-		for(i = 0; i<level[depth]; i++){
+		for(i = 0; i<FAV->level_size[FAV->tree_depth]; i++){
 			
 			size = val > block_int_capacity ? block_int_capacity : val;
-			memset(blocks, 0, DSKINF.blksz);
-			getempty_blocks(size, blocks, FFLST);
-			setbits(blocks, size, 0, flags);
-			build(DSKINF, flags, FFLST);
+			memset(blocks, 0, FAV->DSKINF.blksz);
+			getempty_blocks(size, blocks, FAV->FFLST);
+			setbits(blocks, size, 0, FAV->flags);
+			build(FAV->DSKINF, FAV->flags, FAV->FFLST);
 
 			if(parent_block > 0){
-				memset(buffer, 0, DSKINF.blksz);
-				write_to_buffer(buffer, (char *)blocks, DSKINF.blksz, 0);
-				vdwrite(fd, buffer, parent_block, DSKINF.blksz);
+				memset(buffer, 0, FAV->DSKINF.blksz);
+				write_to_buffer(buffer, (char *)blocks, FAV->DSKINF.blksz, 0);
+				vdwrite(FAV->disk_fd, buffer, parent_block, FAV->DSKINF.blksz);
 			}
 			
 			for(j = 0; j<size; j++){
 				
-				level[depth]--;			
+				FAV->level_size[FAV->tree_depth]--;			
 
-				if(depth == 0){ 
-					memset(buffer, 0, DSKINF.blksz);
-					read(usrfl_fd, buffer, DSKINF.blksz);
-					vdwrite(fd, buffer, blocks[j], DSKINF.blksz);
+				if(FAV->tree_depth == 0){ 
+					memset(buffer, 0, FAV->DSKINF.blksz);
+					read(FAV->usrfl_fd, buffer, FAV->DSKINF.blksz);
+					vdwrite(FAV->disk_fd, buffer, blocks[j], FAV->DSKINF.blksz);
 				}else{
-					depth--;	
-					insert(usrfl_fd, fd, DSKINF, level, depth, block_int_capacity, FFLST, blocks[j],flags);
+					FAV->tree_depth--;	
+					insert(FAV, blocks[j]);
 				}
 			}
 			
@@ -133,26 +89,12 @@ int insert( int usrfl_fd, int fd, DISKINFO DSKINF,
 }
 
 
-int insert_file(int disk_fd, int usrfl_fd, unsigned int usrflsz,  
-				DISKINFO DSKINF, unsigned long int *flags, 
-				FR_FLGBLK_LST *FFLST, unsigned int *level_size, 
-				unsigned int *tree_depth, unsigned int *dskblk_ofmtd,
-				unsigned int *loc_ofmtd_in_blk){
+int insert_file( FILE_ACTION_VARS *FAV){
 	
-	unsigned int filebegblk;
+	unsigned int filebegblk = insert(FAV, 0);
+	write_metadata(filebegblk, FAV);
 	
-	if(get_emtmtdblk_loc(disk_fd, DSKINF, dskblk_ofmtd, loc_ofmtd_in_blk) == -1)
-		return -2;
-	
-	if(usrflsz > (FFLST->frblkcnt*DSKINF.blksz))
-		return -3;
-	
-
-	filebegblk = insert(usrfl_fd, disk_fd, DSKINF, level_size, tree_depth, block_int_capacity, FFLST, 0, flags);
-
-	write_metadata(usrfl_fd, usrflsz, filebegblk, disk_fd, dskblk_ofmtd, loc_ofmtd_in_blk, DSKINF);
 	printf("yeah");
-
 	return 0;
 }
 

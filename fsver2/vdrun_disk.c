@@ -22,25 +22,13 @@ int perform_task(int task, FILE_ACTION_VARS FAV){
 	lseek(FAV.usrfl_fd, 0, SEEK_SET);
 
 	get_tree_info(&FAV);
-	search(&FAV);	
+	search(&FAV, 0);
+	// do checking if metadata block is retirvd
+	// and is there enough storage, before calling the below func
 	insert_file(&FAV);
 	fetch(&FAV);
+	delete(&FAV);
 	write_flags_todisk(&FAV);
-
-
-	int usrfl_fd = -1;
-
-    int level[5];
-    int tree_depth = 0;
-    unsigned int block_int_capacity = (DSKINF.blksz/sizeof(int));
-    unsigned int filedata_blocks = ceil((float)flmtd->usrflsz/(float)DSKINF.blksz);
-	int temp = filedata_blocks;
-	
-    char newname[52] = "";
-    strcat(newname, "new_");
-    strcat(newname, flmtd->flnm);
-
-	*/
 
 }
 

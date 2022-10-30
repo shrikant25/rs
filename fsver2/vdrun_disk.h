@@ -50,7 +50,7 @@ void build(DISKINFO, unsigned long int *, FR_FLGBLK_LST *);
 
 #ifndef _INSERT_FILE
 #define _INSERT_FILE
-int insert_file(int, char *, DISKINFO, unsigned long int *, FR_FLGBLK_LST *);
+unsigned int insert( FILE_ACTION_VARS *FAV, unsigned int parent_block){
 #endif
 
 #endif
