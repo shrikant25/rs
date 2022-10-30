@@ -10,7 +10,39 @@
 #include <string.h>
 #include <math.h>
 
+int perform_task(int task, FILE_ACTION_VARS FAV){
 
+	FAV.usrfl_fd = open(FAV.usrflnm, O_RDONLY, 00777);
+		if (FAV.usrfl_fd == -1) return -1;
+
+	unsigned int level_size[5]; 
+	FAV.level_size = &level_size;
+	
+	FAV.usrflsz = lseek(FAV.usrfl_fd, 0, SEEK_END);
+	lseek(FAV.usrfl_fd, 0, SEEK_SET);
+
+	get_tree_info(&FAV);
+	search(&FAV);	
+	insert_file(&FAV);
+	fetch(&FAV);
+	write_flags_todisk(&FAV);
+
+
+	int usrfl_fd = -1;
+
+    int level[5];
+    int tree_depth = 0;
+    unsigned int block_int_capacity = (DSKINF.blksz/sizeof(int));
+    unsigned int filedata_blocks = ceil((float)flmtd->usrflsz/(float)DSKINF.blksz);
+	int temp = filedata_blocks;
+	
+    char newname[52] = "";
+    strcat(newname, "new_");
+    strcat(newname, flmtd->flnm);
+
+	*/
+
+}
 
 
 void readflags(int fd, unsigned long int *flags, DISKINFO DSKINF){
@@ -83,21 +115,18 @@ int main(int argc, char *argv[]){
 	printf("total empty  blocks %d\n", FFLST.head->cnt);
 	printf("total empty  bytes %ld\n", (FFLST.head->cnt)*DSKINF.blksz);
 	
-	int filestatus = insert_file(fd, "b.txt", DSKINF, flags, &FFLST);
+	char *usrflnm;
+	int task;
 
-	if(filestatus != 0){
-		printf("filestatus %d\n", filestatus);
-		//perror("Failed to write file to disk");
-		exit(EXIT_FAILURE);
-	}
-	else{   
-		printf("agdain");// update flag values inside the disk
-		if(write_flags_todisk(fd, flags, DSKINF) == -1){
-			perror("Failed to write flags\n");
-			exit(EXIT_FAILURE);
-		}
-	}
-		
+	FILE_ACTION_VARS FAV;
+	FAV.disk_fd = fd;
+	FAV.usrflnm = usrflnm;
+	FAV.flags = flags; 
+	FR_FLGBLK_LST *FFLST = &FFLST; 
+	DISKINFO DSKINF = DSKINF;
+
+	perform_task(task, FAV);
+
 	free(buffer);
 	free(flags);
 	close(fd);
