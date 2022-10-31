@@ -1,17 +1,18 @@
-#include <stdio.h>
+
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include "vdsyslib.h"
+#include "vdsetbits.h"
+#include "vdwrite_to_buffer.h"
 #include "vdfile_metadata.h"
-#include "vdrun_disk.h"
 #include "vddriver.h"
-#include "vddiskinfo.h"
+
 
 void set_blocks_free(FILE_ACTION_VARS *FAV, unsigned int parent_block){
 
-    int i, j;
+    int i, j, k;
     int size;
+    int *intptr = NULL;
     int val = FAV->level_size[FAV->tree_depth];
     unsigned int block_int_capacity = FAV->DSKINF.blksz/sizeof(int);
     unsigned int *blocks = malloc(sizeof(int) * block_int_capacity);
@@ -21,7 +22,15 @@ void set_blocks_free(FILE_ACTION_VARS *FAV, unsigned int parent_block){
         
         size = val > block_int_capacity ? block_int_capacity : val;
         memset(blocks, 0, FAV->DSKINF.blksz);
-        vdread(FAV->disk_fd, blocks, parent_block, FAV->DSKINF.blksz);
+        memset(buffer, 0, FAV->DSKINF.blksz);
+        vdread(FAV->disk_fd, buffer, parent_block, FAV->DSKINF.blksz);
+        
+        intptr = (int *)buffer;
+        
+        for(k = 0; k<size; k++){
+            blocks[k] = *intptr++;
+        }
+        
         setbits(blocks, size, 0, FAV->flags);
         
         if(FAV->tree_depth > 0){

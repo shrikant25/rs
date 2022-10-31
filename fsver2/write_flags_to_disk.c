@@ -5,7 +5,7 @@
 #include "vdwrite_to_buffer.h"
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+
 
 int write_flags_todisk(int fd ,unsigned long int *flags, DISKINFO DSKINF){
 

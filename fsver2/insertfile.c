@@ -1,11 +1,11 @@
-
-#include "vdrun_disk.h"
+#include <stdlib.h>
+#include <string.h>
 #include "vdsetbits.h"
 #include "vdsyslib.h"
 #include "vdwrite_to_buffer.h"
 #include "vdfile_metadata.h"
 #include "vddriver.h"
-#include <stdlib.h>
+
 
 
 unsigned int insert( FILE_ACTION_VARS *FAV, unsigned int parent_block){

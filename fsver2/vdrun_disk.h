@@ -1,57 +1,31 @@
-#ifndef _VDHEADER_H
-#define _VDHEADER_H
+#ifndef _VD_RUN_DISK_H
+#define _VD_RUN_DISK_H
 
-#include "vddiskinfo.h"
-
-#ifndef _FR_FLGBLK
-#define _FR_FLGBLK
-typedef struct FR_FLGBLK{
-	unsigned int loc;
-	unsigned int cnt;
-	struct FR_FLGBLK *next;
-}FR_FLGBLK;
-#endif
-
-#ifndef _FR_FLGBLK_LST
-#define _FR_FLGBLK_LST
-typedef struct FR_FLGBLK_LST{
-	FR_FLGBLK *head;
-	unsigned int frblkcnt;
-}FR_FLGBLK_LST;
-#endif
-
-#ifndef _FILE_ACTION_VARS
-#define _FILE_ACTION_VARS
-typedef struct FILE_ACTION_VARS{
-	int disk_fd;
-	int usrfl_fd; 
-	char *usrflnm;
-	unsigned int usrflsz;
-	unsigned long int *flags;  
-	unsigned int *level_size; 
-	unsigned int tree_depth; 
-	unsigned int dskblk_ofmtd;
-	unsigned int loc_ofmtd_in_blk;
-	unsigned int filebegloc;
-	FR_FLGBLK_LST *FFLST;
-	DISKINFO DSKINF;
-}FILE_ACTION_VARS;
-#endif
-
-
-#ifndef _GETEMPTY_BLOCKS
-#define _GETEMPTY_BLOCKS
-int getempty_blocks(int, unsigned int *, FR_FLGBLK_LST *);
-#endif
-
-#ifndef _BUILD
-#define _BUILD
-void build(DISKINFO, unsigned long int *, FR_FLGBLK_LST *);
-#endif
+#include "vdfile_action_vars.h"
 
 #ifndef _INSERT_FILE
 #define _INSERT_FILE
-unsigned int insert( FILE_ACTION_VARS *FAV, unsigned int parent_block){
+int insert_file( FILE_ACTION_VARS *);
+#endif
+
+#ifndef _SEARCH_FILE
+#define _SEARCH_FILE
+int search( FILE_ACTION_VARS *, int);
+#endif
+
+#ifndef _FETCH_FILE
+#define _FETCH_FILE
+int fetch(FILE_ACTION_VARS *);
+#endif
+
+#ifndef _DELETE_FILE
+#define _DELETE_FILE
+int delete(FILE_ACTION_VARS *);
+#endif
+
+#ifndef _GET_TREE_INFO
+#define _GET_TREE_INFO
+int get_tree_info(FILE_ACTION_VARS *);
 #endif
 
 #endif

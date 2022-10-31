@@ -1,14 +1,11 @@
+#include "vdconstants.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include "vddriver.h"
 #include "vdsyslib.h"
 #include "vdrun_disk.h"
-#include "vdconstants.h"
-#include "vddiskinfo.h"
-#include "vddriver.h"
 #include "vdwrite_to_buffer.h"
-#include "vdwrite_flags_to_disk.h"
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 enum task {task_insert_file = 1, task_delete_file = 2, task_fetch_file = 3};
 
@@ -18,7 +15,7 @@ int perform_task(int task, FILE_ACTION_VARS FAV){
 		if (FAV.usrfl_fd == -1) return -1;
 
 	unsigned int level_size[5]; 
-	FAV.level_size = &level_size;
+	FAV.level_size = level_size;
 	
 	FAV.usrflsz = lseek(FAV.usrfl_fd, 0, SEEK_END);
 	lseek(FAV.usrfl_fd, 0, SEEK_SET);

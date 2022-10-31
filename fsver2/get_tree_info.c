@@ -1,5 +1,4 @@
-#include "vddiskinfo.h"
-#include "vdrun_disk.h"
+#include <math.h>
 #include "vdfile_metadata.h"
 
 int get_tree_info(FILE_ACTION_VARS *FAV){
@@ -8,7 +7,7 @@ int get_tree_info(FILE_ACTION_VARS *FAV){
 	unsigned int temp = ceil((float)FAV->usrflsz/(float)FAV->DSKINF.blksz);
     FAV->tree_depth = 0;
 	
-	FAV->level_size[FAV.tree_depth] = temp;
+	FAV->level_size[FAV->tree_depth] = temp;
 
 	do{
 		temp = ceil((float)temp/(float)block_int_capacity);

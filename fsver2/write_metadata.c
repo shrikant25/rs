@@ -1,5 +1,9 @@
 #include <stdlib.h>
 #include "vdsyslib.h"
+#include <stdio.h>
+#include <string.h>
+#include "vddriver.h"
+#include "vdwrite_to_buffer.h"
 #include "vdrun_disk.h"
 #include "vdfile_metadata.h"
 

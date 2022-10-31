@@ -1,7 +1,7 @@
 #ifndef _FL_MTD_HEADER_H
 #define _FL_MTD_HEADER_H
 
-#include "vdrun_disk.h"
+#include "vdfile_action_vars.h"
 
 #ifndef _FL_METADATA
 #define _FL_METADATA
