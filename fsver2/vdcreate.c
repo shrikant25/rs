@@ -14,9 +14,6 @@
 
 #define METADATA_BLOCKS_RATIO 1/(VDQUAD * VDBYTESZ * VDKB)
 
-int createfile(DISKINFO);
-int create_metadata_blocks(int, DISKINFO);
-
 int createfile(DISKINFO DSKINF){
 
    int pid;

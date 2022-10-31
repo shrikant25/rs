@@ -30,9 +30,9 @@ int perform_task(int task, FILE_ACTION_VARS FAV){
 								search(&FAV, 1);
 								if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
 									insert_file(&FAV);
+									close(FAV.usrfl_fd);
 									return 0;
 								}
-								
 								return -1;
 								break;
 		
@@ -40,20 +40,19 @@ int perform_task(int task, FILE_ACTION_VARS FAV){
 								search(&FAV, 0);
 								if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
 									delete(&FAV);
+									close(FAV.usrfl_fd);
 									return 0;
 								}
 								return -2;
-								break;
 
 		case task_fetch_file:
 								search(&FAV, 0);
 								if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
 									fetch(&FAV);
+									close(FAV.usrfl_fd);
 									return 0;
 								}
 								return -3;
-								break;
-
 	}
 	return -4;
 }
@@ -149,6 +148,7 @@ int main(int argc, char *argv[]){
 	FAV.disk_fd = fd;
 	FAV.usrflnm = usrflnm;
 	FAV.flags = flags;
+	FAV.filebegloc = -1;
 	
 	perform_task(task_delete_file, FAV);
 

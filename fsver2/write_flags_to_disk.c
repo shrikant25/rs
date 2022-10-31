@@ -6,8 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
 int write_flags_todisk(int fd ,unsigned long int *flags, DISKINFO DSKINF){
-	printf("flsgs");
+
 	unsigned char *chptr;
 	char *buffer;
 	int i = 0;

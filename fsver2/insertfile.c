@@ -65,7 +65,7 @@ int insert_file( FILE_ACTION_VARS *FAV){
 	flmtd.flsz = FAV->usrflsz;
 	flmtd.isavailable = 0;
 
-	write_metadata(FAV, filebegblk, flmtd);
+	write_metadata(FAV, flmtd);
 	
 	return 0;
 }

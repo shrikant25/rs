@@ -1,4 +1,4 @@
-#include <stdio.h>
+
 void write_to_buffer(char *buffer, char *val, unsigned int num_of_bytes, unsigned int index){
 
     unsigned int i = index;

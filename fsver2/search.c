@@ -30,7 +30,8 @@ int search( FILE_ACTION_VARS *FAV, int get_empty_block){
                     break;
                 }
             }
-            else if(!flmtdptr->isavailable && !(strcmp(FAV->usrflnm, flmtd->flnm))){   
+            else if(!flmtdptr->isavailable && !(strcmp(FAV->usrflnm, flmtd->flnm))){  
+                FAV->filebegloc = flmtdptr->strtloc; 
                 found = 1;
                 break;
             }

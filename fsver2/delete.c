@@ -50,7 +50,7 @@ int delete(FILE_ACTION_VARS *FAV){
 	flmtd.flsz = 0;
 	flmtd.isavailable = 1;
 
-	write_metadata(FAV, filebegblk, flmtd);
-    set_blocks_free(FAV, parent_block);
-    free(before);
+	write_metadata(FAV, flmtd);
+    set_blocks_free(FAV, FAV->filebegloc);
+
 }

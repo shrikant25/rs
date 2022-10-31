@@ -32,6 +32,7 @@ typedef struct FILE_ACTION_VARS{
 	unsigned int tree_depth; 
 	unsigned int dskblk_ofmtd;
 	unsigned int loc_ofmtd_in_blk;
+	unsigned int filebegloc;
 	FR_FLGBLK_LST *FFLST;
 	DISKINFO DSKINF;
 }FILE_ACTION_VARS;
