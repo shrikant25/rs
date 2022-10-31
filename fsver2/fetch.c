@@ -9,7 +9,7 @@
 #include "vddiskinfo.h"
 // still not done
 
-int retrive_file_data(FILE_ACTION_VARS *FAV, unsigned int parent_block){
+void retrive_file_data(FILE_ACTION_VARS *FAV, unsigned int parent_block){
 
     int i, j;
     int val = FAV->level_size[FAV->tree_depth];
@@ -21,6 +21,7 @@ int retrive_file_data(FILE_ACTION_VARS *FAV, unsigned int parent_block){
         
         size = val > block_int_capacity ? block_int_capacity : val;
         memset(blocks, 0, DSKINF.blksz);
+        vdread(FAV->disk_fd, blocks, parent_block, FAV->DSKINF.blksz);
         
         for(j = 0; j<size; j++){
             
@@ -28,7 +29,7 @@ int retrive_file_data(FILE_ACTION_VARS *FAV, unsigned int parent_block){
 
             if(FAV->tree_depth == 0){ 
                 memset(buffer, 0, FAV->DSKINF.blksz);
-                vdread(FAV->disk_fd, buffer, blocks[j]);
+                vdread(FAV->disk_fd, buffer, blocks[j], FAV->DSKINF.blksz);
                 vdwrite(FAV->usrfl_fd, buffer, FAV->DSKINF.blksz, FAV->DSKINF.blksz);
                 //at last block just read enough bytes
             }else{
@@ -40,10 +41,8 @@ int retrive_file_data(FILE_ACTION_VARS *FAV, unsigned int parent_block){
         val -= size;
     }
 
-    root_block = blocks[0];
     free(blocks);
     free(buffer);
-    return root_block;
 }
 
 

@@ -26,7 +26,6 @@ int write_metadata( FILE_ACTION_VARS *FAV,  unsigned int flbegbloc){
 	flmtd.strtloc = flbegbloc;
 	flmtd.flsz = FAV->usrflsz;
 	flmtd.isavailable = 0;
-	printf("filenmae %s\n", flmtd.flnm);
 		printf("filenmae %s\n", flmtd.flnm);
 		printf(" %d\n", flmtd.flsz);
 		printf("%d\n", FAV->dskblk_ofmtd);

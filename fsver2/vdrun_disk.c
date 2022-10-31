@@ -22,7 +22,7 @@ int perform_task(int task, FILE_ACTION_VARS FAV){
 	lseek(FAV.usrfl_fd, 0, SEEK_SET);
 
 	get_tree_info(&FAV);
-	search(&FAV, 0);
+	search(&FAV);
 	// do checking if metadata block is retirvd
 	// and is there enough storage, before calling the below func
 	insert_file(&FAV);
