@@ -8,7 +8,7 @@
 #include "vddriver.h"
 #include "vddiskinfo.h"
 
-int search( FILE_ACTION_VARS *FAV, int get_empty_block = 0){
+int search( FILE_ACTION_VARS *FAV, int get_empty_block){
   
     FL_METADATA *flmtdptr;
     char *buffer = malloc(sizeof(char) * FAV->DSKINF.blksz);
@@ -20,8 +20,8 @@ int search( FILE_ACTION_VARS *FAV, int get_empty_block = 0){
     while(i<=FAV->DSKINF.ttlmtdta_blks){
 
         memset(buffer, 0, FAV->DSKINF.blksz);
-        vdread(FAV->fd, buffer, i, FAV->DSKINF.blksz); //read the block containing the metadatablocks
-        flmtd = (FL_METADATA *)buffer;
+        vdread(FAV->disk_fd, buffer, i, FAV->DSKINF.blksz); //read the block containing the metadatablocks
+        flmtdptr = (FL_METADATA *)buffer;
 
         for(int j = 0; j<ttl_mtdblks_in_dskblk; j++){ // loop untill the there are no more blocks in buffer or either there are no more metadata blocks in file
             if(get_empty_block){
@@ -30,7 +30,7 @@ int search( FILE_ACTION_VARS *FAV, int get_empty_block = 0){
                     break;
                 }
             }
-            else if(!flmtd->isavailable && !(strcmp(FAV->filename, flmtd->flnm))){   
+            else if(!flmtdptr->isavailable && !(strcmp(FAV->usrflnm, flmtd->flnm))){   
                 found = 1;
                 break;
             }

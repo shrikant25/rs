@@ -57,6 +57,6 @@ int fetch(FILE_ACTION_VARS *FAV, int begblk){
 
 	retrive_file_data(FAV, begblk);
 
-    close(FAV->usrfl_fdusrfl_fd);
+    close(FAV->usrfl_fd);
 }
 

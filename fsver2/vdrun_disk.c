@@ -10,6 +10,8 @@
 #include <string.h>
 #include <math.h>
 
+enum task {task_insert_file = 1, task_delete_file = 2, task_fetch_file = 3};
+
 int perform_task(int task, FILE_ACTION_VARS FAV){
 
 	FAV.usrfl_fd = open(FAV.usrflnm, O_RDONLY, 00777);
@@ -22,14 +24,38 @@ int perform_task(int task, FILE_ACTION_VARS FAV){
 	lseek(FAV.usrfl_fd, 0, SEEK_SET);
 
 	get_tree_info(&FAV);
-	search(&FAV);
-	// do checking if metadata block is retirvd
-	// and is there enough storage, before calling the below func
-	insert_file(&FAV);
-	fetch(&FAV);
-	delete(&FAV);
-	write_flags_todisk(&FAV);
 
+	switch (task){
+		case task_insert_file:
+								search(&FAV, 1);
+								if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
+									insert_file(&FAV);
+									return 0;
+								}
+								
+								return -1;
+								break;
+		
+		case task_delete_file:
+								search(&FAV, 0);
+								if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
+									delete(&FAV);
+									return 0;
+								}
+								return -2;
+								break;
+
+		case task_fetch_file:
+								search(&FAV, 0);
+								if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
+									fetch(&FAV);
+									return 0;
+								}
+								return -3;
+								break;
+
+	}
+	return -4;
 }
 
 
@@ -72,10 +98,12 @@ int main(int argc, char *argv[]){
 	char *buffer;
 	unsigned int fd = 0; 
 	unsigned long int *flags;
+	int task = 0;
 	DISKINFO DSKINF;
 	FR_FLGBLK_LST FFLST;
 	FFLST.frblkcnt = 0;
 	FFLST.head = NULL;
+	
 	fd = open(argv[1], O_RDWR, 00777);
 	if(fd == -1) return -1;
 
@@ -104,16 +132,25 @@ int main(int argc, char *argv[]){
 	printf("total empty  bytes %ld\n", (FFLST.head->cnt)*DSKINF.blksz);
 	
 	char *usrflnm;
-	int task;
+	
 
 	FILE_ACTION_VARS FAV;
+	
+	FAV.DSKINF = DSKINF;
+	FAV.FFLST = &FFLST;
+	FAV.flags = flags;
+	FAV.level_size = NULL;
+	FAV.dskblk_ofmtd = -1;
+	FAV.loc_ofmtd_in_blk = -1;
+	FAV.tree_depth = -1;
+	FAV.usrfl_fd = -1;
+	FAV.usrflnm = usrflnm;
+	FAV.usrflsz = -1;
 	FAV.disk_fd = fd;
 	FAV.usrflnm = usrflnm;
-	FAV.flags = flags; 
-	FR_FLGBLK_LST *FFLST = &FFLST; 
-	DISKINFO DSKINF = DSKINF;
-
-	perform_task(task, FAV);
+	FAV.flags = flags;
+	
+	perform_task(task_delete_file, FAV);
 
 	free(buffer);
 	free(flags);

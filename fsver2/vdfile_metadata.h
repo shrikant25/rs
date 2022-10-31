@@ -11,4 +11,11 @@ typedef struct FL_METADATA{
 }FL_METADATA;
 #endif
 
+#include "vddiskinfo.h"
+
+#ifndef _VD_WRITE_METADATA
+#define _VD_WRITE_METADATA
+int write_metadata( FILE_ACTION_VARS *FAV,, FL_METADATA flmtd);
+#endif
+
 #endif

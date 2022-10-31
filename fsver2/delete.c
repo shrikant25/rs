@@ -7,20 +7,20 @@
 #include "vdrun_disk.h"
 #include "vddriver.h"
 #include "vddiskinfo.h"
-// still not done
 
-void retrive_file_data(FILE_ACTION_VARS *FAV, unsigned int parent_block){
+void set_blocks_free(FILE_ACTION_VARS *FAV, unsigned int parent_block){
 
     int i, j;
+    int size;
     int val = FAV->level_size[FAV->tree_depth];
     unsigned int block_int_capacity = FAV->DSKINF.blksz/sizeof(int);
     unsigned int *blocks = malloc(sizeof(int) * block_int_capacity);
-    char *buffer = malloc(sizeof(char) * DSKINF.blksz);
+    char *buffer = malloc(sizeof(char) * FAV->DSKINF.blksz);
 
     for(i = 0; i<FAV->level_size[FAV->tree_depth]; i++){
         
         size = val > block_int_capacity ? block_int_capacity : val;
-        memset(blocks, 0, DSKINF.blksz);
+        memset(blocks, 0, FAV->DSKINF.blksz);
         vdread(FAV->disk_fd, blocks, parent_block, FAV->DSKINF.blksz);
         setbits(blocks, size, 0, FAV->flags);
         
@@ -30,7 +30,7 @@ void retrive_file_data(FILE_ACTION_VARS *FAV, unsigned int parent_block){
                 FAV->level_size[FAV->tree_depth]--;			
 
                     FAV->tree_depth--;	
-                    retrive_file_data(FAV, blocks[j]);
+                    set_blocks_free(FAV, blocks[j]);
             }
         }
         
@@ -42,4 +42,15 @@ void retrive_file_data(FILE_ACTION_VARS *FAV, unsigned int parent_block){
 }
 
 
+int delete(FILE_ACTION_VARS *FAV){
 
+    FL_METADATA flmtd;
+	strcpy(flmtd.flnm, "");
+	flmtd.strtloc = 0;
+	flmtd.flsz = 0;
+	flmtd.isavailable = 1;
+
+	write_metadata(FAV, filebegblk, flmtd);
+    set_blocks_free(FAV, parent_block);
+    free(before);
+}

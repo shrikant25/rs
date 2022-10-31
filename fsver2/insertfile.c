@@ -1,45 +1,12 @@
-#include "vdconstants.h"
+
 #include "vdrun_disk.h"
-#include "vddiskinfo.h"
 #include "vdsetbits.h"
 #include "vdsyslib.h"
 #include "vdwrite_to_buffer.h"
 #include "vdfile_metadata.h"
 #include "vddriver.h"
-#include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 
-int write_metadata( FILE_ACTION_VARS *FAV,  unsigned int flbegbloc){
-
-	// structure variable to store filematadat
-	FL_METADATA flmtd;
-
-	char *buffer = malloc(sizeof(char) * FAV->DSKINF.blksz);
-	char *chptr = NULL;
-
-	memset(buffer, '\0', FAV->DSKINF.blksz);
-	vdread(FAV->disk_fd, buffer, FAV->dskblk_ofmtd, FAV->DSKINF.blksz);
-	//store filename in structure variable 
-	strcpy(flmtd.flnm, FAV->usrflnm);
-	flmtd.strtloc = flbegbloc;
-	flmtd.flsz = FAV->usrflsz;
-	flmtd.isavailable = 0;
-		printf("filenmae %s\n", flmtd.flnm);
-		printf(" %d\n", flmtd.flsz);
-		printf("%d\n", FAV->dskblk_ofmtd);
-		printf("%d\n", FAV->loc_ofmtd_in_blk);
-	//store bytes of structure variable in buffer at given location
-	
-	write_to_buffer(buffer, (char *)&flmtd, sizeof(FL_METADATA), FAV->loc_ofmtd_in_blk);
-	
-	// write metadata to disk
-	vdwrite(FAV->disk_fd, buffer, FAV->dskblk_ofmtd, FAV->DSKINF.blksz);
-	
-	free(buffer);
-	return 0;
-}
 
 unsigned int insert( FILE_ACTION_VARS *FAV, unsigned int parent_block){
 
@@ -91,9 +58,15 @@ unsigned int insert( FILE_ACTION_VARS *FAV, unsigned int parent_block){
 int insert_file( FILE_ACTION_VARS *FAV){
 	
 	unsigned int filebegblk = insert(FAV, 0);
-	write_metadata(filebegblk, FAV);
+
+	FL_METADATA flmtd;
+	strcpy(flmtd.flnm, FAV->usrflnm);
+	flmtd.strtloc = filebegblk;
+	flmtd.flsz = FAV->usrflsz;
+	flmtd.isavailable = 0;
+
+	write_metadata(FAV, filebegblk, flmtd);
 	
-	printf("yeah");
 	return 0;
 }
 
