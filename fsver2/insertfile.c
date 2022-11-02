@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "vdsetbits.h"
+#include <stdio.h>
 #include "vdsyslib.h"
 #include "vdwrite_to_buffer.h"
 #include "vdfile_metadata.h"
@@ -64,7 +65,7 @@ int insert_file( FILE_ACTION_VARS *FAV){
 	flmtd.strtloc = filebegblk;
 	flmtd.flsz = FAV->usrflsz;
 	flmtd.isavailable = 0;
-
+	printf("done");
 	write_metadata(FAV, flmtd);
 	
 	return 0;

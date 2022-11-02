@@ -19,7 +19,7 @@ int search( FILE_ACTION_VARS *FAV, int get_empty_block){
     i = 1;
     while(i<=FAV->DSKINF.ttlmtdta_blks){
 
-        memset(buffer, 0, FAV->DSKINF.blksz);
+     //   memset(buffer, '\0', FAV->DSKINF.blksz);
         vdread(FAV->disk_fd, buffer, i, FAV->DSKINF.blksz); //read the block containing the metadatablocks
         flmtdptr = (FL_METADATA *)buffer;
 
