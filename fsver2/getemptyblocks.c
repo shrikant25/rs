@@ -21,7 +21,7 @@ void insertblk(FR_FLGBLK *newfr_blk, FR_FLGBLK_LST *FFLST){
 	*temp = newfr_blk;
 
 	FFLST->frblkcnt += newfr_blk->cnt;
-	printf(" FFLST.frblkcnt %d\n", FFLST->frblkcnt);
+	//printf(" FFLST.frblkcnt %d\n", FFLST->frblkcnt);
 }
 	
 
@@ -81,7 +81,7 @@ void build(DISKINFO DSKINF, unsigned long int * flags, FR_FLGBLK_LST *FFLST){
 	if(fr_flgblk)
 		insertblk(fr_flgblk, FFLST);	
 	
-	display_lst(FFLST);
+	//display_lst(FFLST);
 }
 
 

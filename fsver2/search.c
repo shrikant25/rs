@@ -16,31 +16,35 @@ int search( FILE_ACTION_VARS *FAV, int get_empty_block){
     int found = 0;
     int i, j;
     
-    i = 1;
-    while(i<=FAV->DSKINF.ttlmtdta_blks){
+    i = FAV->DSKINF.mtdta_blk_ofst;
+    while(i<=FAV->DSKINF.dsk_blk_for_mtdata){
 
-     //   memset(buffer, '\0', FAV->DSKINF.blksz);
-        vdread(FAV->disk_fd, buffer, i, FAV->DSKINF.blksz); //read the block containing the metadatablocks
+        memset(buffer, '\0', FAV->DSKINF.blksz);
+        int amount = vdread(FAV->disk_fd, buffer, i, FAV->DSKINF.blksz); //read the block containing the metadatablocks
+       // printf("amoutn %d\n", amount);
         flmtdptr = (FL_METADATA *)buffer;
 
-        for(int j = 0; j<ttl_mtdblks_in_dskblk; j++){ // loop untill the there are no more blocks in buffer or either there are no more metadata blocks in file
+        for(j = 0; j<ttl_mtdblks_in_dskblk; j++){ // loop untill the there are no more blocks in buffer or either there are no more metadata blocks in file
+        //    printf("name %s\n", flmtdptr->flnm);
             if(get_empty_block){
-                if(flmtdptr->isavailable){
+        //        printf("----   %d\n",flmtdptr->isavailable);
+          //      printf("----  %d\n",flmtdptr->flsz);
+                if(flmtdptr->isavailable == 1){
                     found = 1;
                     break;
                 }
             }
-            else if(!flmtdptr->isavailable && !(strcmp(FAV->usrflnm, flmtdptr->flnm))){  
+            else if(!flmtdptr->isavailable && !(strncmp(FAV->usrflnm, flmtdptr->flnm, strlen(FAV->usrflnm)))){  
                 FAV->filebegloc = flmtdptr->strtloc; 
                 found = 1;
                 break;
             }
 
-            if(found) break;
+          
             
             flmtdptr++;
         }
-
+  if(found) break;
         i++;
     }
 

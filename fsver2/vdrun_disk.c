@@ -5,82 +5,25 @@
 #include "vdsyslib.h"
 #include "vdrun_disk.h"
 #include "vdwrite_to_buffer.h"
+#include "vdwrite_flags_to_disk.h"
 #include <string.h>
+#include "test.h"
 
-enum task {task_insert_file = 1, task_delete_file = 2, task_fetch_file = 3};
-
-void run_disk(DISKINFO DSKINF, FR_FLGBLK_LST *FFLST, unsigned long int *flags, int fd){
-
-	char usrflnm;
-	char task[100];
-	int task_file;
-	size_t task_file_len;
-	size_t total_data_read;
-	unsigned int data_to_beread = 0;
-	char *buffer = malloc(sizeof(char) * VDKB); 
-	int i;
-	char ch;
-	int last_task_end_index;
-	FILE_ACTION_VARS FAV;
-	
-	FAV.DSKINF = DSKINF;
-	FAV.FFLST = FFLST;
-	FAV.flags = flags;
-	FAV.disk_fd = fd;
-
-	task_file = open("task_file", O_RDONLY, 00777);
-	task_file_len = lseek(task_file, 0, SEEK_END);
-	lseek(task_file, 0, SEEK_SET);
-
-	while(total_data_read < task_file_len){
-
-		memset(buffer, 0, VDKB);
-		data_to_beread = (task_file_len - total_data_read) > VDKB ? VDKB : (task_file_len - total_data_read);
-		read(task_file, buffer, data_to_beread);
-
-		for(i = 0; i<data_to_beread; i++){
-			
-			if(buffer[i] != '\n')
-				task[i] = buffer[i];
-			else{
-
-				last_task_end_index = i+1;
-				task[i] = '\0';
-				FAV.level_size = NULL;
-				FAV.tree_depth = -1;
-				FAV.dskblk_ofmtd = -1;
-				FAV.loc_ofmtd_in_blk = -1;
-				FAV.usrfl_fd = -1;
-				FAV.usrflnm = usrflnm;
-				FAV.usrflsz = -1;
-				FAV.filebegloc = -1;
-
-				perform_task(task_delete_file, FAV);
-
-			}
-				
-		}
-	}
-
-	free(buffer);
-
-}
-
-int perform_task(int task, FILE_ACTION_VARS FAV){
-
+int perform_task(char * task, FILE_ACTION_VARS FAV){
+	strcpy(task, "task_fetch_file");
 	FAV.usrfl_fd = open(FAV.usrflnm, O_RDONLY, 00777);
 		if (FAV.usrfl_fd == -1) return -1;
 
-	unsigned int level_size[5]; 
+	int level_size[5]; 
 	FAV.level_size = level_size;
 	
 	FAV.usrflsz = lseek(FAV.usrfl_fd, 0, SEEK_END);
 	lseek(FAV.usrfl_fd, 0, SEEK_SET);
 
 	get_tree_info(&FAV);
-
-	switch (task){
-		case task_insert_file:
+	//printf("%ls\n", FAV.level_size);
+	//printf("%d\n", FAV.tree_depth);
+	if(!strcmp(task, "task_insert_file")){
 								search(&FAV, 1);
 								if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
 									insert_file(&FAV);
@@ -88,29 +31,79 @@ int perform_task(int task, FILE_ACTION_VARS FAV){
 									return 0;
 								}
 								return -1;
-								break;
-		
-		case task_delete_file:
+
+	}
+	else if(!strcmp(task, "task_delete_file")){
+							
 								search(&FAV, 0);
 								if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
 									delete(&FAV);
 									close(FAV.usrfl_fd);
 									return 0;
 								}
-								return -2;
-
-		case task_fetch_file:
+								return -1;
+	}
+	else if(!strcmp(task, "task_fetch_file")){
 								search(&FAV, 0);
 								if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
 									fetch(&FAV);
 									close(FAV.usrfl_fd);
 									return 0;
 								}
-								return -3;
+								return -1;
 	}
-	return -4;
+	else
+		return -2;
 }
 
+
+int run_disk(DISKINFO DSKINF, FR_FLGBLK_LST *FFLST, unsigned long int *flags, int fd){
+
+	int task_file_fd = open("task_file", O_RDONLY, 00777);
+	if(task_file_fd == -1) return -1;
+	int status;
+	FILE_ACTION_VARS FAV;
+	FAV.DSKINF = DSKINF;
+	FAV.FFLST = FFLST;
+	FAV.flags = flags;
+	FAV.disk_fd = fd;
+	TASK_NODE *buffer = malloc(sizeof(TASK_NODE) * 10); 
+	
+	int task_cnt;
+	read(task_file_fd, &task_cnt, sizeof(int));
+	printf("%d\n", task_cnt);
+
+	for(int j = 0; j<task_cnt/10; j++){
+
+		memset(buffer, 0, sizeof(TASK_NODE) * 10);
+		read(task_file_fd, buffer, sizeof(TASK_NODE) * 10);
+		for(int i = 0; i<10; i++){
+			
+			printf("name %s task %s\n", buffer[i].filename, buffer[i].task);
+			FAV.level_size = NULL;
+		
+			FAV.tree_depth = -1;
+			FAV.dskblk_ofmtd = -1;
+			
+			FAV.loc_ofmtd_in_blk = -1;
+			FAV.usrfl_fd = -1;
+			FAV.usrflnm = malloc(sizeof(char) * strlen(buffer[i].filename));
+			strcpy(FAV.usrflnm ,buffer[i].filename);
+			FAV.usrflsz = -1;
+			FAV.filebegloc = -1;
+			
+			status = perform_task(buffer[i].task, FAV);
+			free(FAV.usrflnm); 
+			
+			printf("Task name %s, filename %s, status %d\n", buffer[i].task, buffer[i].filename, status);
+			
+		}
+	
+	}
+
+	free(buffer);
+	return 0;
+}
 
 void readflags(int fd, unsigned long int *flags, DISKINFO DSKINF){
 	
@@ -181,8 +174,10 @@ int main(int argc, char *argv[]){
 	printf("largest available block is at %ld\n", ((FFLST.head->loc)*DSKINF.blksz)+1);
 	printf("total empty  blocks %d\n", FFLST.head->cnt);
 	printf("total empty  bytes %ld\n", (FFLST.head->cnt)*DSKINF.blksz);
-	run_disk(DSKINF, &FFLST, flags, fd);
 
+	int status = run_disk(DSKINF, &FFLST, flags, fd);
+	write_flags_todisk(fd, flags, DSKINF);
+	printf("status : %d\n", status);
 	free(flags);
 	close(fd);
 	

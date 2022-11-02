@@ -13,6 +13,8 @@ unsigned int insert( FILE_ACTION_VARS *FAV, unsigned int parent_block){
 
 		int i, j, size;
 		unsigned int root_block = 0;
+		if(parent_block > 0)
+			FAV->tree_depth--;	
 		int val = FAV->level_size[FAV->tree_depth];
 		unsigned int block_int_capacity = FAV->DSKINF.blksz/sizeof(int);
 		unsigned int *blocks = malloc(sizeof(int) * block_int_capacity);
@@ -41,7 +43,6 @@ unsigned int insert( FILE_ACTION_VARS *FAV, unsigned int parent_block){
 					read(FAV->usrfl_fd, buffer, FAV->DSKINF.blksz);
 					vdwrite(FAV->disk_fd, buffer, blocks[j], FAV->DSKINF.blksz);
 				}else{
-					FAV->tree_depth--;	
 					insert(FAV, blocks[j]);
 				}
 			}
@@ -61,7 +62,10 @@ int insert_file( FILE_ACTION_VARS *FAV){
 	unsigned int filebegblk = insert(FAV, 0);
 
 	FL_METADATA flmtd;
-	strcpy(flmtd.flnm, FAV->usrflnm);
+	
+	strncpy(flmtd.flnm, FAV->usrflnm, strlen(FAV->usrflnm));
+	flmtd.flnm[strlen(FAV->usrflnm)] ='\0';
+	printf("%s %ld",flmtd.flnm, strlen(flmtd.flnm));
 	flmtd.strtloc = filebegblk;
 	flmtd.flsz = FAV->usrflsz;
 	flmtd.isavailable = 0;

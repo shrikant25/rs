@@ -16,7 +16,7 @@ int write_metadata( FILE_ACTION_VARS *FAV, FL_METADATA flmtd){
 	memset(buffer, '\0', FAV->DSKINF.blksz);
 	vdread(FAV->disk_fd, buffer, FAV->dskblk_ofmtd, FAV->DSKINF.blksz);
 	//store filename in structure variable 
-		printf("filenmae %s\n", flmtd.flnm);
+		printf("filenmae %ld %s \n",strlen(flmtd.flnm),  flmtd.flnm);
 		printf(" %d\n", flmtd.flsz);
 		printf("%d\n", FAV->dskblk_ofmtd);
 		printf("%d\n", FAV->loc_ofmtd_in_blk);

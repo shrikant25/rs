@@ -11,8 +11,7 @@ int get_tree_info(FILE_ACTION_VARS *FAV){
 
 	do{
 		temp = ceil((float)temp/(float)block_int_capacity);
-		FAV->level_size[FAV->tree_depth] = temp;
+		FAV->level_size[++FAV->tree_depth] = temp;
 	}while(temp != 1);
 
-	FAV->tree_depth--;
 }

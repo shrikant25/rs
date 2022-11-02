@@ -11,8 +11,8 @@ typedef struct FILE_ACTION_VARS{
 	char *usrflnm;
 	unsigned int usrflsz;
 	unsigned long int *flags;  
-	unsigned int *level_size; 
-	unsigned int tree_depth; 
+	int *level_size; 
+	int tree_depth; 
 	unsigned int dskblk_ofmtd;
 	unsigned int loc_ofmtd_in_blk;
 	unsigned int filebegloc;
