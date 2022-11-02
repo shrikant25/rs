@@ -9,6 +9,63 @@
 
 enum task {task_insert_file = 1, task_delete_file = 2, task_fetch_file = 3};
 
+void run_disk(DISKINFO DSKINF, FR_FLGBLK_LST *FFLST, unsigned long int *flags, int fd){
+
+	char usrflnm;
+	char task[100];
+	int task_file;
+	size_t task_file_len;
+	size_t total_data_read;
+	unsigned int data_to_beread = 0;
+	char *buffer = malloc(sizeof(char) * VDKB); 
+	int i;
+	char ch;
+	int last_task_end_index;
+	FILE_ACTION_VARS FAV;
+	
+	FAV.DSKINF = DSKINF;
+	FAV.FFLST = FFLST;
+	FAV.flags = flags;
+	FAV.disk_fd = fd;
+
+	task_file = open("task_file", O_RDONLY, 00777);
+	task_file_len = lseek(task_file, 0, SEEK_END);
+	lseek(task_file, 0, SEEK_SET);
+
+	while(total_data_read < task_file_len){
+
+		memset(buffer, 0, VDKB);
+		data_to_beread = (task_file_len - total_data_read) > VDKB ? VDKB : (task_file_len - total_data_read);
+		read(task_file, buffer, data_to_beread);
+
+		for(i = 0; i<data_to_beread; i++){
+			
+			if(buffer[i] != '\n')
+				task[i] = buffer[i];
+			else{
+
+				last_task_end_index = i+1;
+				task[i] = '\0';
+				FAV.level_size = NULL;
+				FAV.tree_depth = -1;
+				FAV.dskblk_ofmtd = -1;
+				FAV.loc_ofmtd_in_blk = -1;
+				FAV.usrfl_fd = -1;
+				FAV.usrflnm = usrflnm;
+				FAV.usrflsz = -1;
+				FAV.filebegloc = -1;
+
+				perform_task(task_delete_file, FAV);
+
+			}
+				
+		}
+	}
+
+	free(buffer);
+
+}
+
 int perform_task(int task, FILE_ACTION_VARS FAV){
 
 	FAV.usrfl_fd = open(FAV.usrflnm, O_RDONLY, 00777);
@@ -91,7 +148,6 @@ int main(int argc, char *argv[]){
 		exit(EXIT_FAILURE);
 	}
 	
-	char *buffer;
 	unsigned int fd = 0; 
 	unsigned long int *flags;
 	int task = 0;
@@ -114,8 +170,7 @@ int main(int argc, char *argv[]){
 	printf("flag blocks count : %d\n", DSKINF.flgblkcnt);
 	printf("total metadata blocks  %u\n", DSKINF.ttlmtdta_blks);
 	printf("dsk blocks required for metadata blocks %d\n", DSKINF.ttlmtdta_blks);
-
-	buffer = malloc(DSKINF.blksz);	
+	
 	flags = malloc(DSKINF.flags_arrsz * VDQUAD);
 	readflags(fd, flags, DSKINF);
 	
@@ -126,30 +181,8 @@ int main(int argc, char *argv[]){
 	printf("largest available block is at %ld\n", ((FFLST.head->loc)*DSKINF.blksz)+1);
 	printf("total empty  blocks %d\n", FFLST.head->cnt);
 	printf("total empty  bytes %ld\n", (FFLST.head->cnt)*DSKINF.blksz);
-	
-	char *usrflnm;
-	
+	run_disk(DSKINF, &FFLST, flags, fd);
 
-	FILE_ACTION_VARS FAV;
-	
-	FAV.DSKINF = DSKINF;
-	FAV.FFLST = &FFLST;
-	FAV.flags = flags;
-	FAV.level_size = NULL;
-	FAV.dskblk_ofmtd = -1;
-	FAV.loc_ofmtd_in_blk = -1;
-	FAV.tree_depth = -1;
-	FAV.usrfl_fd = -1;
-	FAV.usrflnm = usrflnm;
-	FAV.usrflsz = -1;
-	FAV.disk_fd = fd;
-	FAV.usrflnm = usrflnm;
-	FAV.flags = flags;
-	FAV.filebegloc = -1;
-	
-	perform_task(task_delete_file, FAV);
-
-	free(buffer);
 	free(flags);
 	close(fd);
 	
