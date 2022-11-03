@@ -9,18 +9,16 @@
 
 
 
-unsigned int insert( FILE_ACTION_VARS *FAV, unsigned int parent_block){
+unsigned int insert( FILE_ACTION_VARS *FAV, unsigned int parent_block, int tree_depth, unsigned int *blocks, char * buffer){
 
 		int i, j, size;
 		unsigned int root_block = 0;
 		if(parent_block > 0)
-			FAV->tree_depth--;	
-		int val = FAV->level_size[FAV->tree_depth];
+			tree_depth--;	
+		int val = FAV->level_size[tree_depth];
 		unsigned int block_int_capacity = FAV->DSKINF.blksz/sizeof(int);
-		unsigned int *blocks = malloc(sizeof(int) * block_int_capacity);
-		char *buffer = malloc(sizeof(char) * FAV->DSKINF.blksz);
-
-		for(i = 0; i<FAV->level_size[FAV->tree_depth]; i++){
+		
+		for(i = 0; i<FAV->level_size[tree_depth]; i++){
 			
 			size = val > block_int_capacity ? block_int_capacity : val;
 			memset(blocks, 0, FAV->DSKINF.blksz);
@@ -36,14 +34,14 @@ unsigned int insert( FILE_ACTION_VARS *FAV, unsigned int parent_block){
 			
 			for(j = 0; j<size; j++){
 				
-				FAV->level_size[FAV->tree_depth]--;			
+				FAV->level_size[tree_depth]--;			
 
-				if(FAV->tree_depth == 0){ 
+				if(tree_depth == 0){ 
 					memset(buffer, 0, FAV->DSKINF.blksz);
 					read(FAV->usrfl_fd, buffer, FAV->DSKINF.blksz);
 					vdwrite(FAV->disk_fd, buffer, blocks[j], FAV->DSKINF.blksz);
 				}else{
-					insert(FAV, blocks[j]);
+					insert(FAV, blocks[j], tree_depth, blocks, buffer);
 				}
 			}
 			
@@ -51,15 +49,19 @@ unsigned int insert( FILE_ACTION_VARS *FAV, unsigned int parent_block){
 		}
 
 		root_block = blocks[0];
-		free(blocks);
-		free(buffer);
 		return root_block;
 }
 
 
 int insert_file( FILE_ACTION_VARS *FAV){
 	
-	unsigned int filebegblk = insert(FAV, 0);
+	unsigned int block_int_capacity = FAV->DSKINF.blksz/sizeof(int);
+	unsigned int *blocks = malloc(sizeof(int) * block_int_capacity);
+	char *buffer = malloc(sizeof(char) * FAV->DSKINF.blksz);
+
+	unsigned int filebegblk = insert(FAV, 0, FAV->tree_depth, blocks, buffer);
+	free(blocks);
+	free(buffer);
 
 	FL_METADATA flmtd;
 	
