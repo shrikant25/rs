@@ -11,7 +11,7 @@
 
 int perform_task(char * task, FILE_ACTION_VARS FAV){
 	strcpy(task, "task_fetch_file");
-	FAV.usrfl_fd = open(FAV.usrflnm, O_RDONLY | O_CREAT  , 00777);
+	FAV.usrfl_fd = open(FAV.usrflnm, O_RDWR | O_CREAT  , 00777);
 		if (FAV.usrfl_fd == -1) return -1;
 
 	int level_size[5]; 
@@ -75,11 +75,11 @@ int run_disk(DISKINFO DSKINF, FR_FLGBLK_LST *FFLST, unsigned long int *flags, in
 	read(task_file_fd, &task_cnt, sizeof(int));
 	printf("%d\n", task_cnt);
 
-	for(int j = 0; j<task_cnt; j++){
+	for(int j = 0; j<task_cnt/10; j++){
 		printf("task cnt %d\n", task_cnt);
 		memset(buffer, 0, sizeof(TASK_NODE) * 10);
 		read(task_file_fd, buffer, sizeof(TASK_NODE) * 10);
-		for(int i = 0; i<1; i++){
+		for(int i = 0; i<task_cnt; i++){
 			
 			printf("name %s task %s\n", buffer[i].filename, buffer[i].task);
 			FAV.level_size = NULL;
