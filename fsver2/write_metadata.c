@@ -22,7 +22,12 @@ int write_metadata( FILE_ACTION_VARS *FAV, FL_METADATA flmtd){
 		printf("%d\n", FAV->loc_ofmtd_in_blk);
 	//store bytes of structure variable in buffer at given location
 	
-	write_to_buffer(buffer, (char *)&flmtd, sizeof(FL_METADATA), FAV->loc_ofmtd_in_blk);
+	write_to_buffer(buffer, (char *)&flmtd, sizeof(FL_METADATA), sizeof(FL_METADATA)*FAV->loc_ofmtd_in_blk);
+	FL_METADATA *flmtdptr = (FL_METADATA *)buffer;
+		printf("filenmae %ld %s \n",strlen(flmtdptr->flnm),  flmtdptr->flnm);
+		printf(" %d\n", flmtdptr->flsz);
+		printf("%d\n", FAV->dskblk_ofmtd);
+		printf("%d\n", FAV->loc_ofmtd_in_blk);
 	
 	// write metadata to disk
 	vdwrite(FAV->disk_fd, buffer, FAV->dskblk_ofmtd, FAV->DSKINF.blksz);

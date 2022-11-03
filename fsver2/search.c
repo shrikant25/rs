@@ -36,6 +36,7 @@ int search( FILE_ACTION_VARS *FAV, int get_empty_block){
             }
             else if(!flmtdptr->isavailable && !(strncmp(FAV->usrflnm, flmtdptr->flnm, strlen(FAV->usrflnm)))){  
                 FAV->filebegloc = flmtdptr->strtloc; 
+                FAV->usrflsz = flmtdptr->flsz;
                 found = 1;
                 break;
             }

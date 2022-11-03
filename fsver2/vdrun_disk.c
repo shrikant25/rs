@@ -11,7 +11,7 @@
 
 int perform_task(char * task, FILE_ACTION_VARS FAV){
 	strcpy(task, "task_fetch_file");
-	FAV.usrfl_fd = open(FAV.usrflnm, O_RDONLY, 00777);
+	FAV.usrfl_fd = open(FAV.usrflnm, O_RDONLY | O_CREAT  , 00777);
 		if (FAV.usrfl_fd == -1) return -1;
 
 	int level_size[5]; 
@@ -20,12 +20,12 @@ int perform_task(char * task, FILE_ACTION_VARS FAV){
 	FAV.usrflsz = lseek(FAV.usrfl_fd, 0, SEEK_END);
 	lseek(FAV.usrfl_fd, 0, SEEK_SET);
 
-	get_tree_info(&FAV);
 	//printf("%ls\n", FAV.level_size);
 	//printf("%d\n", FAV.tree_depth);
 	if(!strcmp(task, "task_insert_file")){
 								search(&FAV, 1);
 								if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
+									get_tree_info(&FAV);
 									insert_file(&FAV);
 									close(FAV.usrfl_fd);
 									return 0;
@@ -37,6 +37,7 @@ int perform_task(char * task, FILE_ACTION_VARS FAV){
 							
 								search(&FAV, 0);
 								if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
+									get_tree_info(&FAV);
 									delete(&FAV);
 									close(FAV.usrfl_fd);
 									return 0;
@@ -46,6 +47,7 @@ int perform_task(char * task, FILE_ACTION_VARS FAV){
 	else if(!strcmp(task, "task_fetch_file")){
 								search(&FAV, 0);
 								if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
+									get_tree_info(&FAV);
 									fetch(&FAV);
 									close(FAV.usrfl_fd);
 									return 0;
@@ -73,11 +75,11 @@ int run_disk(DISKINFO DSKINF, FR_FLGBLK_LST *FFLST, unsigned long int *flags, in
 	read(task_file_fd, &task_cnt, sizeof(int));
 	printf("%d\n", task_cnt);
 
-	for(int j = 0; j<task_cnt/10; j++){
-
+	for(int j = 0; j<task_cnt; j++){
+		printf("task cnt %d\n", task_cnt);
 		memset(buffer, 0, sizeof(TASK_NODE) * 10);
 		read(task_file_fd, buffer, sizeof(TASK_NODE) * 10);
-		for(int i = 0; i<10; i++){
+		for(int i = 0; i<1; i++){
 			
 			printf("name %s task %s\n", buffer[i].filename, buffer[i].task);
 			FAV.level_size = NULL;
