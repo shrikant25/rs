@@ -9,50 +9,57 @@
 #include <string.h>
 #include "test.h"
 
-int perform_task(char * task, FILE_ACTION_VARS FAV){
-	//strcpy(task, "task_fetch_file");
-	FAV.usrfl_fd = open(FAV.usrflnm, O_RDWR | O_CREAT  , 00777);
-		if (FAV.usrfl_fd == -1) return -1;
-
+int perform_task(char * task, char *path, FILE_ACTION_VARS FAV){
+	
 	int level_size[5]; 
 	FAV.level_size = level_size;
 	
-	FAV.usrflsz = lseek(FAV.usrfl_fd, 0, SEEK_END);
-	lseek(FAV.usrfl_fd, 0, SEEK_SET);
-
-	//printf("%ls\n", FAV.level_size);
-	//printf("%d\n", FAV.tree_depth);
 	if(!strcmp(task, "task_insert_file")){
-								search(&FAV, 1);
-								if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
-									get_tree_info(&FAV);
-									insert_file(&FAV);
-									close(FAV.usrfl_fd);
-									return 0;
-								}
-								return -1;
+								
+		FAV.usrfl_fd = open(path, O_RDONLY, 00777);
+			if (FAV.usrfl_fd == -1) return -1;
+		
+		FAV.usrflsz = lseek(FAV.usrfl_fd, 0, SEEK_END);
+			lseek(FAV.usrfl_fd, 0, SEEK_SET);
+
+		search(&FAV, 1);
+		if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
+			get_tree_info(&FAV);
+			insert_file(&FAV);
+			close(FAV.usrfl_fd);
+			return 0;
+		}
+		return -1;
 
 	}
 	else if(!strcmp(task, "task_delete_file")){
-							
-								search(&FAV, 0);
-								if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
-									get_tree_info(&FAV);
-									delete(&FAV);
-									close(FAV.usrfl_fd);
-									return 0;
-								}
-								return -1;
+
+		FAV.usrfl_fd = -1;
+
+		search(&FAV, 0);
+		if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
+			get_tree_info(&FAV);
+			delete(&FAV);
+			return 0;
+		}
+		return -1;
 	}
 	else if(!strcmp(task, "task_fetch_file")){
-								search(&FAV, 0);
-								if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
-									get_tree_info(&FAV);
-									fetch(&FAV);
-									close(FAV.usrfl_fd);
-									return 0;
-								}
-								return -1;
+
+		FAV.usrfl_fd = open(path, O_WRONLY | O_CREAT, 00777);
+		if (FAV.usrfl_fd == -1) return -1;
+		
+		FAV.usrflsz = lseek(FAV.usrfl_fd, 0, SEEK_END);
+			lseek(FAV.usrfl_fd, 0, SEEK_SET);
+
+		search(&FAV, 0);
+		if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
+			get_tree_info(&FAV);
+			fetch(&FAV);
+			close(FAV.usrfl_fd);
+			return 0;
+		}
+		return -1;
 	}
 	else
 		return -2;
@@ -95,7 +102,7 @@ int run_disk(DISKINFO DSKINF, FR_FLGBLK_LST *FFLST, unsigned long int *flags, in
 			FAV.usrflsz = -1;
 			FAV.filebegloc = -1;
 			
-			status = perform_task(buffer[i].task, FAV);
+			status = perform_task(buffer[i].task, buffer[i].path, FAV);
 			free(FAV.usrflnm); 
 			
 			printf("Task name %s, filename %s, status %d\n", buffer[i].task, buffer[i].filename, status);
