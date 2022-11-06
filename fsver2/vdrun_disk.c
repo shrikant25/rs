@@ -10,7 +10,7 @@
 #include "test.h"
 
 int perform_task(char * task, FILE_ACTION_VARS FAV){
-	strcpy(task, "task_fetch_file");
+	//strcpy(task, "task_fetch_file");
 	FAV.usrfl_fd = open(FAV.usrflnm, O_RDWR | O_CREAT  , 00777);
 		if (FAV.usrfl_fd == -1) return -1;
 
@@ -72,14 +72,15 @@ int run_disk(DISKINFO DSKINF, FR_FLGBLK_LST *FFLST, unsigned long int *flags, in
 	TASK_NODE *buffer = malloc(sizeof(TASK_NODE) * 10); 
 	
 	int task_cnt;
-	read(task_file_fd, &task_cnt, sizeof(int));
+	int data_read = read(task_file_fd, &task_cnt, sizeof(int));
 	printf("%d\n", task_cnt);
 
 	for(int j = 0; j<task_cnt/10; j++){
 		printf("task cnt %d\n", task_cnt);
 		memset(buffer, 0, sizeof(TASK_NODE) * 10);
-		read(task_file_fd, buffer, sizeof(TASK_NODE) * 10);
-		for(int i = 0; i<task_cnt; i++){
+		data_read = read(task_file_fd, buffer, sizeof(TASK_NODE) * 10);
+		
+		for(int i = 0; i<10; i++){
 			
 			printf("name %s task %s\n", buffer[i].filename, buffer[i].task);
 			FAV.level_size = NULL;
@@ -138,8 +139,9 @@ void readflags(int fd, unsigned long int *flags, DISKINFO DSKINF){
 
 int main(int argc, char *argv[]){
 	
+	int data_read;
 	if(argc != 2){
-		write(1, "Invalid arguments\n", 18);
+		data_read = write(1, "Invalid arguments\n", 18);
 		exit(EXIT_FAILURE);
 	}
 	
@@ -154,7 +156,7 @@ int main(int argc, char *argv[]){
 	fd = open(argv[1], O_RDWR, 00777);
 	if(fd == -1) return -1;
 
-	read(fd, &DSKINF, sizeof(DSKINF));
+	data_read = read(fd, &DSKINF, sizeof(DSKINF));
 	printf("blksz %ld\n", DSKINF.blksz);
 	printf("blcknt %ld\n", DSKINF.blkcnt);
 	printf("flags arrasz %d\n", DSKINF.flags_arrsz);
