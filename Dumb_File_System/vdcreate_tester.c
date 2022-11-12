@@ -30,10 +30,10 @@ int main(int argc, char *argv[]){
     unsigned long int *flags = malloc(sizeof(unsigned long int)  * (DSKINF.flags_arrsz));
     lseek(fd, DSKINF.blksz, SEEK_SET);
     read(fd, flags, sizeof(unsigned long int) *(DSKINF.flags_arrsz));
-    
+  /*
     for(int i = 0; i < DSKINF.flags_arrsz;i++){
         printf(" %d %lx\n", i , flags[i]);
-    }
+    }*/
     free(flags);
     FL_METADATA *mtdarr = malloc(DSKINF.ttlmtdta_blks *sizeof(FL_METADATA));
     read(fd, mtdarr, sizeof(FL_METADATA) * DSKINF.ttlmtdta_blks);

@@ -31,7 +31,7 @@ int main(int argc, char **argv){
             temp[i] ='\0';
             i = 0;
             strcpy(tskn.filename, temp);
-            strcpy(tskn.path, "/home/shrikant/Desktop/rs/fsver2/test_files2/");
+            strcpy(tskn.path, "/home/shrikant/rs/Dumb_File_System/test_files1/");
             strcat(tskn.path, tskn.filename);
             if(task == 1)
                 strcpy(tskn.task, "task_insert_file");

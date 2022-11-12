@@ -52,6 +52,6 @@ int delete(FILE_ACTION_VARS *FAV){
 	flmtd.isavailable = 1;
 
 	write_metadata(FAV, flmtd);
-    set_blocks_free(FAV, FAV->filebegloc, FAV->tree_depth-1);
+    set_blocks_free(FAV, FAV->filebegloc, FAV->tree_depth);
 
 }
