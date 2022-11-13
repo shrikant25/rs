@@ -34,12 +34,12 @@ FR_FLGBLK * createblk(unsigned int bitloc){
 
 void deallocate(FR_FLGBLK_LST *FFLST){
 
-	FR_FLGBLK **temp = &FFLST->head;
+	FR_FLGBLK *temp = FFLST->head;
 	FR_FLGBLK *current = NULL;
 	
-	while(*temp != NULL){
-		current = *temp;
-		temp = &(*temp)->next;
+	while(temp != NULL){
+		current = temp;
+		temp = temp->next;
 		free(current);
 	}
 
