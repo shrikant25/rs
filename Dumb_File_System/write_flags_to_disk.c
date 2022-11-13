@@ -1,11 +1,10 @@
+#include <stdlib.h>
+#include <string.h>
 #include "vdconstants.h"
 #include "vdsyslib.h"
 #include "vddiskinfo.h"
 #include "vddriver.h"
 #include "vdwrite_to_buffer.h"
-#include <stdlib.h>
-#include <string.h>
-
 
 int write_flags_todisk(int fd ,unsigned long int *flags, DISKINFO DSKINF){
 

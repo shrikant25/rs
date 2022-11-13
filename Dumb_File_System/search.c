@@ -21,14 +21,11 @@ int search( FILE_ACTION_VARS *FAV, int get_empty_block){
 
         memset(buffer, '\0', FAV->DSKINF.blksz);
         int amount = vdread(FAV->disk_fd, buffer, i, FAV->DSKINF.blksz); //read the block containing the metadatablocks
-       // printf("amoutn %d\n", amount);
         flmtdptr = (FL_METADATA *)buffer;
 
         for(j = 0; j<ttl_mtdblks_in_dskblk; j++){ // loop untill the there are no more blocks in buffer or either there are no more metadata blocks in file
-        //    printf("name %s\n", flmtdptr->flnm);
+        
             if(get_empty_block){
-        //        printf("----   %d\n",flmtdptr->isavailable);
-          //      printf("----  %d\n",flmtdptr->flsz);
                 if(flmtdptr->isavailable == 1){
                     found = 1;
                     break;

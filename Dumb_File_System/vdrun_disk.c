@@ -1,12 +1,12 @@
-#include "vdconstants.h"
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #include "vddriver.h"
 #include "vdsyslib.h"
 #include "vdrun_disk.h"
 #include "vdwrite_to_buffer.h"
 #include "vdwrite_flags_to_disk.h"
-#include <string.h>
+#include "vdconstants.h"
 #include "test.h"
 
 int perform_task(char * task, char *path, FILE_ACTION_VARS FAV){
@@ -35,8 +35,8 @@ int perform_task(char * task, char *path, FILE_ACTION_VARS FAV){
 	else if(!strcmp(task, "task_delete_file")){
 
 		FAV.usrfl_fd = -1;
-
 		search(&FAV, 0);
+
 		if(FAV.dskblk_ofmtd != -1 && FAV.loc_ofmtd_in_blk != -1){
 			get_tree_info(&FAV);
 			delete(&FAV);
@@ -83,13 +83,11 @@ int run_disk(DISKINFO DSKINF, FR_FLGBLK_LST *FFLST, unsigned long int *flags, in
 	printf("%d\n", task_cnt);
 
 	for(int j = 0; j<task_cnt/10; j++){
-		printf("task cnt %d\n", task_cnt);
 		memset(buffer, 0, sizeof(TASK_NODE) * 10);
 		data_read = read(task_file_fd, buffer, sizeof(TASK_NODE) * 10);
 		
 		for(int i = 0; i<10; i++){
 			
-			printf("name %s task %s\n", buffer[i].filename, buffer[i].task);
 			FAV.level_size = NULL;
 		
 			FAV.tree_depth = -1;
@@ -104,8 +102,6 @@ int run_disk(DISKINFO DSKINF, FR_FLGBLK_LST *FFLST, unsigned long int *flags, in
 			
 			status = perform_task(buffer[i].task, buffer[i].path, FAV);
 			free(FAV.usrflnm); 
-			
-			printf("Task name %s, filename %s, status %d\n", buffer[i].task, buffer[i].filename, status);
 			
 		}
 	
@@ -148,7 +144,7 @@ int main(int argc, char *argv[]){
 	
 	int data_read;
 	if(argc != 2){
-		data_read = write(1, "Invalid arguments\n", 18);
+		printf("Invalid arguments\n");
 		exit(EXIT_FAILURE);
 	}
 	
@@ -164,31 +160,14 @@ int main(int argc, char *argv[]){
 	if(fd == -1) return -1;
 
 	data_read = read(fd, &DSKINF, sizeof(DSKINF));
-	printf("blksz %ld\n", DSKINF.blksz);
-	printf("blcknt %ld\n", DSKINF.blkcnt);
-	printf("flags arrasz %d\n", DSKINF.flags_arrsz);
-	printf("flagsblkcnt %d\n", DSKINF.flgblkcnt);
-	printf("ttlmtdta_blks %d\n", DSKINF.ttlmtdta_blks);
-	printf(" DSKINF.dsk_blk_for_mtdata %d\n",  DSKINF.dsk_blk_for_mtdata);
-	printf(" DSKINF.mtdta_blk_ofst %d\n",  DSKINF.mtdta_blk_ofst);
-	printf("flag blocks count : %d\n", DSKINF.flgblkcnt);
-	printf("total metadata blocks  %u\n", DSKINF.ttlmtdta_blks);
-	printf("dsk blocks required for metadata blocks %d\n", DSKINF.ttlmtdta_blks);
 	
 	flags = malloc(DSKINF.flags_arrsz * VDQUAD);
 	readflags(fd, flags, DSKINF);
 	
 	build(DSKINF, flags, &FFLST);		
 	
-	printf("total blcks %d\n", FFLST.frblkcnt);
-	printf("largest available block is at %d\n", FFLST.head->loc);
-	printf("largest available block is at %ld\n", ((FFLST.head->loc)*DSKINF.blksz)+1);
-	printf("total empty  blocks %d\n", FFLST.head->cnt);
-	printf("total empty  bytes %ld\n", (FFLST.head->cnt)*DSKINF.blksz);
-
 	int status = run_disk(DSKINF, &FFLST, flags, fd);
 	write_flags_todisk(fd, flags, DSKINF);
-	printf("status : %d\n", status);
 	free(flags);
 	close(fd);
 	

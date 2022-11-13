@@ -5,7 +5,6 @@
 #include "vddiskinfo.h"
 #include <math.h>
 
-
 void insertblk(FR_FLGBLK *newfr_blk, FR_FLGBLK_LST *FFLST){
 
 	FR_FLGBLK **temp = &(FFLST->head);
@@ -21,7 +20,6 @@ void insertblk(FR_FLGBLK *newfr_blk, FR_FLGBLK_LST *FFLST){
 	*temp = newfr_blk;
 
 	FFLST->frblkcnt += newfr_blk->cnt;
-	//printf(" FFLST.frblkcnt %d\n", FFLST->frblkcnt);
 }
 	
 
@@ -34,16 +32,18 @@ FR_FLGBLK * createblk(unsigned int bitloc){
 	return blk;
 }
 
-void display_lst(FR_FLGBLK_LST *FFLST){
-	
-	FR_FLGBLK **temp = &(FFLST->head);
+void deallocate(FR_FLGBLK_LST *FFLST){
 
+	FR_FLGBLK **temp = &FFLST->head;
+	FR_FLGBLK *current = NULL;
+	
 	while(*temp != NULL){
-		printf("unsigned int loc %u\n", (*temp)->loc);
-		printf("unsigned int cnt %u\n", (*temp)->cnt);
-	    printf("\n\n");
+		current = *temp;
 		temp = &(*temp)->next;
+		free(current);
 	}
+
+	FFLST->head = NULL;
 }
 
 
@@ -51,7 +51,7 @@ void build(DISKINFO DSKINF, unsigned long int * flags, FR_FLGBLK_LST *FFLST){
 
 	int i,j;
 	unsigned long int temp = 0;
-	FFLST->head = NULL;  //this is dumb deaalocate it frst
+	deallocate(FFLST);
 	FR_FLGBLK *fr_flgblk = NULL;	
 	unsigned int flags_chunks = (DSKINF.flgblkcnt * DSKINF.blksz)/(VDQUAD); 
 	
@@ -81,7 +81,6 @@ void build(DISKINFO DSKINF, unsigned long int * flags, FR_FLGBLK_LST *FFLST){
 	if(fr_flgblk)
 		insertblk(fr_flgblk, FFLST);	
 	
-	//display_lst(FFLST);
 }
 
 
@@ -102,7 +101,6 @@ int getempty_blocks(int blocks_required, unsigned int *blocks, FR_FLGBLK_LST *FF
 			temp = (temp == NULL) ? &FFLST->head : &(*temp)->next;
 			j = (*temp)->cnt;
 			block_in_series = (*temp)->loc;
-		//	printf("bli in serisk %d\n", block_in_series);
 		}
 		
 		blocks[i++] = block_in_series++;

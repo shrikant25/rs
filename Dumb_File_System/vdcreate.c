@@ -60,7 +60,6 @@ int create_metadata_blocks(int fd, DISKINFO DSKINF){
    }
 
    start = DSKINF.mtdta_blk_ofst;
-   printf("theeeeeeeeeeeee statt %d\n", start);
    for(i = start; i<DSKINF.dsk_blk_for_mtdata+start ; i++){
       vdwrite(fd, new_buffer, i, DSKINF.blksz);
    }
@@ -74,7 +73,7 @@ int create_metadata_blocks(int fd, DISKINFO DSKINF){
 int main(int argc, char *argv[]){
    
    if(argc != 4){
-      write(1, "Invalid arguments\n", 18);
+      printf("Invalid arguments\n");
       exit(EXIT_FAILURE);
    }
    
@@ -102,23 +101,12 @@ int main(int argc, char *argv[]){
    DSKINF.dsk_blk_for_mtdata = (sizeof(FL_METADATA)*DSKINF.ttlmtdta_blks)/DSKINF.blksz;
    DSKINF.mtdta_blk_ofst = DSKINF.flgblkcnt + 1; // after flagblocks 
    
-   printf("blksz %ld\n", DSKINF.blksz);
-   printf("blcknt %ld\n", DSKINF.blkcnt);
-   printf("flags arrasz %d\n", DSKINF.flags_arrsz);
-   printf("flagsblkcnt %d\n", DSKINF.flgblkcnt);
-   printf("ttlmtdta_blks %d\n", DSKINF.ttlmtdta_blks);
-   printf(" DSKINF.dsk_blk_for_mtdata %d\n",  DSKINF.dsk_blk_for_mtdata);
-   printf(" DSKINF.mtdta_blk_ofst %d\n",  DSKINF.mtdta_blk_ofst);
-   printf("flag blocks count : %d\n", DSKINF.flgblkcnt);
-   printf("total metadata blocks  %u\n", DSKINF.ttlmtdta_blks);
-   printf("dsk blocks required for metadata blocks %d\n", DSKINF.ttlmtdta_blks);
-
    createfile(DSKINF);
    
    fd = open(DSKINF.diskname, O_WRONLY, 00777);
 
    if(fd == -1){
-      write(1, "Disk creation failed\n", 21);
+      printf("Disk creation failed\n");
       exit(EXIT_FAILURE);
    }
   
@@ -139,7 +127,6 @@ int main(int argc, char *argv[]){
       preoccupied_blocks_list[i] = i;
    }
 
-
    setbits(preoccupied_blocks_list, preoccupied_blocks, 0, flags);
    free(preoccupied_blocks_list);
 
@@ -148,7 +135,7 @@ int main(int argc, char *argv[]){
    
    create_metadata_blocks(fd, DSKINF);
    
-   write(1, "Disk creation successfull\n", 26);
+   printf("Disk creation successfull\n");
    close(fd);
    return 0;
 }

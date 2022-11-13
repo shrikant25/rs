@@ -1,5 +1,5 @@
 #include "vdsyslib.h"
- #include <stdio.h>  
+  
 int vdread(int fd, char *buffer, int block_number, int block_size){
 		
 	unsigned int vdbyte_num = block_number * block_size;

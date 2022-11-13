@@ -41,7 +41,6 @@ void retrive_file_data(FILE_ACTION_VARS *FAV, unsigned int parent_block, int cur
             memset(buffer, 0, FAV->DSKINF.blksz);
             vdread(FAV->disk_fd, buffer, blocks[j], FAV->DSKINF.blksz);
             data_read = write(FAV->usrfl_fd, buffer, data_to_be_read);
-            // printf("%s bufer :", buffer);
             FAV->usrflsz -= data_to_be_read;
         }
     }

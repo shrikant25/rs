@@ -1,7 +1,7 @@
 #include <math.h>
 #include "vdfile_metadata.h"
 
-int get_tree_info(FILE_ACTION_VARS *FAV){
+void get_tree_info(FILE_ACTION_VARS *FAV){
 
 	unsigned int block_int_capacity = (FAV->DSKINF.blksz/sizeof(int));
 	unsigned int temp = ceil((float)FAV->usrflsz/(float)FAV->DSKINF.blksz);

@@ -67,11 +67,9 @@ int insert_file( FILE_ACTION_VARS *FAV){
 	
 	strncpy(flmtd.flnm, FAV->usrflnm, strlen(FAV->usrflnm));
 	flmtd.flnm[strlen(FAV->usrflnm)] ='\0';
-	printf("%s %ld",flmtd.flnm, strlen(flmtd.flnm));
 	
 	flmtd.flsz = FAV->usrflsz;
 	flmtd.isavailable = 0;
-	printf("done");
 	write_metadata(FAV, flmtd);
 	
 	return 0;

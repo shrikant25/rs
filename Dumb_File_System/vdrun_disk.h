@@ -25,7 +25,7 @@ int delete(FILE_ACTION_VARS *);
 
 #ifndef _GET_TREE_INFO
 #define _GET_TREE_INFO
-int get_tree_info(FILE_ACTION_VARS *);
+void get_tree_info(FILE_ACTION_VARS *);
 #endif
 
 #endif
