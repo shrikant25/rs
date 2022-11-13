@@ -91,7 +91,7 @@ int main(int argc, char *argv[]){
    buffer = malloc(sizeof(char) * DSKINF.blksz);
 
    DSKINF.diskname = malloc(sizeof(char) * (strlen(argv[1]) + 1));
-   strncpy(DSKINF.diskname, argv[1], strlen(argv[1]));
+   strcpy(DSKINF.diskname, argv[1]);
    DSKINF.diskname[strlen(argv[1])] = '\0'; 
 
    DSKINF.blkcnt = DSKINF.dsksz/DSKINF.blksz;

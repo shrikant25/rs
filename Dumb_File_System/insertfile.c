@@ -65,7 +65,7 @@ int insert_file( FILE_ACTION_VARS *FAV){
 	
 	insert(FAV, flmtd.strtloc, FAV->tree_depth);
 	
-	strncpy(flmtd.flnm, FAV->usrflnm, strlen(FAV->usrflnm));
+	strcpy(flmtd.flnm, FAV->usrflnm);
 	flmtd.flnm[strlen(FAV->usrflnm)] ='\0';
 	
 	flmtd.flsz = FAV->usrflsz;
