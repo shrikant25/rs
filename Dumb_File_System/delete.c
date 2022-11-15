@@ -6,6 +6,7 @@
 #include "vdwrite_to_buffer.h"
 #include "vdfile_metadata.h"
 #include "vddriver.h"
+#include <stdio.h>
 
 void set_blocks_free(FILE_ACTION_VARS *FAV, unsigned int parent_block, int cur_tree_depth){
 
@@ -28,14 +29,16 @@ void set_blocks_free(FILE_ACTION_VARS *FAV, unsigned int parent_block, int cur_t
     
     for(k = 0; k<size; k++){
         blocks[k] = *intptr++;
+       
     }
 
+    setbits(blocks, size, 1, FAV->flags);
+    
     if(cur_tree_depth > 0){
         for(j = 0; j<size; j++){            
             set_blocks_free(FAV, blocks[j], (cur_tree_depth-1));
         }
     }
-    setbits(blocks, size, 0, FAV->flags);
 
     FAV->level_size[cur_tree_depth] -= size;
     free(blocks);
@@ -52,6 +55,7 @@ int delete(FILE_ACTION_VARS *FAV){
 	flmtd.isavailable = 1;
 
 	write_metadata(FAV, flmtd);
+    setbits(&FAV->filebegloc, 1, 1, FAV->flags);
     set_blocks_free(FAV, FAV->filebegloc, FAV->tree_depth);
 
 }

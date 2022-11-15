@@ -67,7 +67,7 @@ int perform_task(char * task, char *path, FILE_ACTION_VARS FAV){
 
 
 int run_disk(DISKINFO DSKINF, FR_FLGBLK_LST *FFLST, unsigned long int *flags, int fd){
-
+	
 	int task_file_fd = open("task_file", O_RDONLY, 00777);
 	if(task_file_fd == -1) return -1;
 	int status;
@@ -81,6 +81,28 @@ int run_disk(DISKINFO DSKINF, FR_FLGBLK_LST *FFLST, unsigned long int *flags, in
 	int task_cnt;
 	int data_read = read(task_file_fd, &task_cnt, sizeof(int));
 	printf("%d\n", task_cnt);
+
+	/*
+
+
+
+			FAV.level_size = NULL;
+		
+			FAV.tree_depth = -1;
+			FAV.dskblk_ofmtd = -1;
+			
+			FAV.loc_ofmtd_in_blk = -1;
+			FAV.usrfl_fd = -1;
+			FAV.usrflnm = malloc(sizeof(char) * 7);
+			strcpy(FAV.usrflnm ,"fr.mkv");
+			FAV.usrflsz = -1;
+			FAV.filebegloc = -1;
+			
+			status = perform_task("task_delete_file", "/home/shrikant/rs/Dumb_File_System/fr.mkv", FAV);
+			free(FAV.usrflnm); 
+
+
+	*/
 
 	for(int j = 0; j<task_cnt/10; j++){
 		memset(buffer, 0, sizeof(TASK_NODE) * 10);
