@@ -29,7 +29,6 @@ void set_blocks_free(FILE_ACTION_VARS *FAV, unsigned int parent_block, int cur_t
     
     for(k = 0; k<size; k++){
         blocks[k] = *intptr++;
-       
     }
 
     setbits(blocks, size, 1, FAV->flags);

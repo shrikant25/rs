@@ -12,7 +12,8 @@ int setbits(unsigned int *blocks_list, int total_blocks_count, int bitsign, unsi
 	for(i = 0; i<total_blocks_count; i++){
 	
 		block_num = blocks_list[i]+1;
-		//printf("blk num%d  bit %d \n", block_num, bitsign);
+		if(block_num == 4610 || block_num == 4609)
+			printf("blk num%d  bit %d \n", block_num, bitsign);
 		flag = ceil((float)block_num/(float)(VDQUAD * VDBYTESZ));
 		startbit_inflag = block_num - ((flag-1) * (VDQUAD* VDBYTESZ));
 		flags[flag-1] = (flags[flag-1] & ~(1UL << (startbit_inflag-1))) | (bitsign << (startbit_inflag-1)); 	

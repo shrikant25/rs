@@ -26,7 +26,7 @@ void insertblk(FR_FLGBLK *newfr_blk, FR_FLGBLK_LST *FFLST){
 FR_FLGBLK * createblk(unsigned int bitloc){
 
 	FR_FLGBLK * blk = (FR_FLGBLK *)malloc(sizeof(FR_FLGBLK));
-	blk->loc = (unsigned int)bitloc+1;
+	blk->loc = (unsigned int)bitloc;
 	blk->cnt = 0;
 
 	return blk;
@@ -57,7 +57,7 @@ void build(DISKINFO DSKINF, unsigned long int * flags, FR_FLGBLK_LST *FFLST){
 	
 	for(i=0; i<flags_chunks; i++){
 		if(flags[i]){
-			for(j=0; j<=(VDQUAD * VDBYTESZ); j++){
+			for(j=0; j<(VDQUAD * VDBYTESZ); j++){
 					
 				if((flags[i]>>j) & 1){
 					if(!fr_flgblk)
