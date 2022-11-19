@@ -13,11 +13,8 @@ int setbits(unsigned int *blocks_list, int total_blocks_count, unsigned long int
 		
 		block_num = blocks_list[i]+1;
 		flag = ceil((float)block_num/(float)(VDQUAD * VDBYTESZ));
-		if(block_num >= 4610 && block_num <=4673)
-			printf("block_num %d before our block %lx bitsign : %d\n", block_num, flags[flag-1], bitsign);
 		startbit_inflag = block_num - ((flag-1) * (VDQUAD* VDBYTESZ));
 		flags[flag-1] = (flags[flag-1] & ~(1UL << (startbit_inflag-1))) | (bitsign << (startbit_inflag-1)); 	
-		if(block_num >= 4610 && block_num <=4673)
-			printf("after our block %lx\n bitsign : %d\n", flags[flag-1], bitsign);
+
 	}	
 }

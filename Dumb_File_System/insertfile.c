@@ -67,8 +67,6 @@ int insert_file( FILE_ACTION_VARS *FAV){
 	
 	strcpy(flmtd.flnm, FAV->usrflnm);
 	flmtd.flnm[strlen(FAV->usrflnm)] ='\0';
-	if(!strcmp(flmtd.flnm, "a.txt"))
-		printf("loc %d\n :", flmtd.strtloc);
 	flmtd.flsz = FAV->usrflsz;
 	flmtd.isavailable = 0;
 	write_metadata(FAV, flmtd);

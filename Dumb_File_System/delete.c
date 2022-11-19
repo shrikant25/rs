@@ -46,8 +46,7 @@ void set_blocks_free(FILE_ACTION_VARS *FAV, unsigned int parent_block, int cur_t
 
 
 int delete(FILE_ACTION_VARS *FAV){
-    if(!strcmp(FAV->usrflnm, "a.txt"))
-		printf("loc %d\n :", FAV->filebegloc);
+
     FL_METADATA flmtd;
 	strcpy(flmtd.flnm, "");
 	flmtd.strtloc = -1;
