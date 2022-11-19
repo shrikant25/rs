@@ -23,10 +23,10 @@ void insertblk(FR_FLGBLK *newfr_blk, FR_FLGBLK_LST *FFLST){
 }
 	
 
-FR_FLGBLK * createblk(unsigned int bitloc){
+FR_FLGBLK * createblk(unsigned int freeblock_loc){
 
 	FR_FLGBLK * blk = (FR_FLGBLK *)malloc(sizeof(FR_FLGBLK));
-	blk->loc = (unsigned int)bitloc;
+	blk->loc = (unsigned int)freeblock_loc;
 	blk->cnt = 0;
 
 	return blk;
@@ -75,7 +75,7 @@ void build(DISKINFO DSKINF, unsigned long int * flags, FR_FLGBLK_LST *FFLST){
 			 
 			if(fr_flgblk)
 				insertblk(fr_flgblk, FFLST);
-			 fr_flgblk = NULL;
+			fr_flgblk = NULL;
 		}
 	}	
 	if(fr_flgblk)
@@ -87,11 +87,10 @@ void build(DISKINFO DSKINF, unsigned long int * flags, FR_FLGBLK_LST *FFLST){
 int getempty_blocks(int blocks_required, unsigned int *blocks, FR_FLGBLK_LST *FFLST){
 
 	if(blocks_required > FFLST->frblkcnt || blocks_required <= 0) return -1;
-
 	FR_FLGBLK **temp = NULL;
 	unsigned int available_blocks_count = 0;
 	int i, j;
-	unsigned int block_in_series;
+	unsigned int block_in_series = -1;
 
 	i = 0;
 	j = 0;

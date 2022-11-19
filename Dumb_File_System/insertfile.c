@@ -58,7 +58,7 @@ int insert_file( FILE_ACTION_VARS *FAV){
 	memset(blocks, 0, FAV->DSKINF.blksz);
 	getempty_blocks(1, blocks, FAV->FFLST);
 	flmtd.strtloc =  blocks[0];
-	
+
 	setbits(blocks, 1, 0, FAV->flags);
 	build(FAV->DSKINF, FAV->flags, FAV->FFLST);
 	free(blocks);
@@ -67,7 +67,8 @@ int insert_file( FILE_ACTION_VARS *FAV){
 	
 	strcpy(flmtd.flnm, FAV->usrflnm);
 	flmtd.flnm[strlen(FAV->usrflnm)] ='\0';
-	
+	if(!strcmp(flmtd.flnm, "a.txt"))
+		printf("loc %d\n :", flmtd.strtloc);
 	flmtd.flsz = FAV->usrflsz;
 	flmtd.isavailable = 0;
 	write_metadata(FAV, flmtd);

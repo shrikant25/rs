@@ -53,7 +53,8 @@ void retrive_file_data(FILE_ACTION_VARS *FAV, unsigned int parent_block, int cur
 
 int fetch(FILE_ACTION_VARS *FAV){
 
-      
+      	if(!strcmp(FAV->usrflnm, "a.txt"))
+		    printf("loc %d\n :", FAV->filebegloc);
     retrive_file_data(FAV, FAV->filebegloc, FAV->tree_depth);
     
     close(FAV->usrfl_fd);

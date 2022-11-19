@@ -49,8 +49,8 @@ int create_metadata_blocks(int fd, DISKINFO DSKINF){
    FL_METADATA flmtd;
 
    strcpy(flmtd.flnm, "");
-   flmtd.strtloc = 0;
-   flmtd.flsz = 0;
+   flmtd.strtloc = -1;
+   flmtd.flsz = -1;
    flmtd.isavailable = 1;
 
    memset(new_buffer, '\0', DSKINF.blksz);
